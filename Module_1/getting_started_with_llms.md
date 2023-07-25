@@ -28,10 +28,11 @@ With these developments in mind, let us proceed to examine each area in greater 
 
 By the way, I leveraged `Llama V2-70B` model to help me with the content for this workshop.
 
-See it in action below:
-![hf.co/chat](../assets/llm_in_action.mov)
+See it in action at [hf.co/chat](https://hf.co/chat/):
+
+https://github.com/pacman100/DHS-LLM-Workshop/assets/blob/main/assets/llm_in_action.mov
 
 
 
-https://github.com/pacman100/DHS-LLM-Workshop/assets/13534540/c5ad3be8-241a-428c-bf29-af175667dcda
+
 
