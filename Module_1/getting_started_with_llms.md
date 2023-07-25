@@ -30,3 +30,8 @@ By the way, I leveraged `Llama V2-70B` model to help me with the content for thi
 
 See it in action below:
 ![hf.co/chat](../assets/llm_in_action.mov)
+
+
+
+https://github.com/pacman100/DHS-LLM-Workshop/assets/13534540/c5ad3be8-241a-428c-bf29-af175667dcda
+
