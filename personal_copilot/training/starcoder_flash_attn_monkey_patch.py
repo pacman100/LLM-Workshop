@@ -52,7 +52,7 @@ def forward(
     if self.multi_query:
         batch_size, query_length, _ = query.shape
         query = query.reshape(batch_size, query_length, self.num_heads, self.head_dim)
-        key, value = [torch.unsqueeze(x, unsqueeze_dim=2) for x in [key, value]]
+        key, value = [torch.unsqueeze(x, 2) for x in [key, value]]
     else:
         query, key, value = [rearrange(x, "b h s d -> b s h d") for x in [query, key, value]]
     query, key, value = [x.to(torch.bfloat16) for x in [query, key, value]]
