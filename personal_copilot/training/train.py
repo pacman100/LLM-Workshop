@@ -279,9 +279,7 @@ def create_and_prepare_model(args):
     )
 
     if (args.use_4bit_qunatization or args.use_8bit_qunatization) and args.use_peft_lora:
-        model = prepare_model_for_kbit_training(
-            model
-        )  # , use_gradient_checkpointing=not args.no_gradient_checkpointing)
+        model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=not args.no_gradient_checkpointing)
 
     if args.use_peft_lora:
         peft_config = LoraConfig(
