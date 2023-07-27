@@ -252,7 +252,7 @@ def create_and_prepare_model(args):
         compute_dtype = getattr(torch, args.bnb_4bit_compute_dtype)
 
         bnb_config = BitsAndBytesConfig(
-            load_in_4bit=args.use_4bit,
+            load_in_4bit=args.use_4bit_qunatization,
             bnb_4bit_quant_type=args.bnb_4bit_quant_type,
             bnb_4bit_compute_dtype=compute_dtype,
             bnb_4bit_use_double_quant=args.use_nested_quant,
