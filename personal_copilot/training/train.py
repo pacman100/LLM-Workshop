@@ -124,7 +124,7 @@ class ConstantLengthDataset(IterableDataset):
         seed=0,
     ):
         self.tokenizer = tokenizer
-        self.concat_token_id = tokenizer.eos_token_id if tokenizer.eos_token_id else args.eos_token_id
+        self.concat_token_id = tokenizer.eos_token_id
         self.dataset = dataset
         self.seq_length = seq_length
         self.infinite = infinite
@@ -245,6 +245,7 @@ def create_datasets(tokenizer, args):
 
 def create_and_prepare_model(args):
     device_map = None
+    bnb_config = None
 
     load_in_8bit = args.use_8bit_qunatization
 
@@ -278,7 +279,9 @@ def create_and_prepare_model(args):
     )
 
     if (args.use_4bit_qunatization or args.use_8bit_qunatization) and args.use_peft_lora:
-        model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=not args.no_gradient_checkpointing)
+        model = prepare_model_for_kbit_training(
+            model
+        )  # , use_gradient_checkpointing=not args.no_gradient_checkpointing)
 
     if args.use_peft_lora:
         peft_config = LoraConfig(
@@ -297,6 +300,7 @@ def create_and_prepare_model(args):
 def run_training(args, train_data, val_data):
     print("Loading the model")
     model = create_and_prepare_model(args)
+    print(model)
 
     train_data.start_iteration = 0
 
@@ -365,7 +369,4 @@ if __name__ == "__main__":
     args = get_args()
     set_seed(args.seed)
     os.makedirs(args.output_dir, exist_ok=True)
-
-    logging.set_verbosity_error()
-
     main(args)
