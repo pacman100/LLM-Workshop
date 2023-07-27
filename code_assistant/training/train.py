@@ -128,6 +128,7 @@ class ScriptArguments:
         default=False,
         metadata={"help": "Enables Flash attention for training."},
     )
+    dataset_text_field: str = field(default="text", metadata={"help": "Dataset field to use as input text."})
 
 
 parser = HfArgumentParser(ScriptArguments)
@@ -203,7 +204,7 @@ trainer = SFTTrainer(
     model=model,
     train_dataset=dataset,
     peft_config=peft_config,
-    dataset_text_field="text",
+    dataset_text_field=script_args.dataset_text_field,
     max_seq_length=script_args.max_seq_length,
     tokenizer=tokenizer,
     args=training_arguments,
