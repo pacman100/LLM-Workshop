@@ -193,16 +193,20 @@ training_arguments = TrainingArguments(
     lr_scheduler_type=script_args.lr_scheduler_type,
     num_train_epochs=script_args.num_train_epochs,
     save_strategy="epoch",
+    evaluation_strategy="epoch",
     push_to_hub=True,
 )
 
 model, peft_config, tokenizer = create_and_prepare_model(script_args)
 model.config.use_cache = False
-dataset = load_dataset(script_args.dataset_name, split="train")
+dataset = load_dataset(script_args.dataset_name)
+train_dataset = dataset["train"]
+val_dataset = dataset["test"]
 
 trainer = SFTTrainer(
     model=model,
-    train_dataset=dataset,
+    train_dataset=train_dataset,
+    val_dataset=val_dataset,
     peft_config=peft_config,
     dataset_text_field=script_args.dataset_text_field,
     max_seq_length=script_args.max_seq_length,

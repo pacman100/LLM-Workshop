@@ -321,7 +321,6 @@ def run_training(args, train_data, val_data):
         bf16=args.bf16,
         weight_decay=args.weight_decay,
         run_name=f"starcoder",
-        report_to="wandb",
         push_to_hub=True,
     )
 
