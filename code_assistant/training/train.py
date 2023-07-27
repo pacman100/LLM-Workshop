@@ -137,8 +137,10 @@ script_args = parser.parse_args_into_dataclasses()[0]
 def create_and_prepare_model(args):
     if args.use_flash_attn:
         from llama_flash_attn_monkey_patch import replace_llama_attn_with_flash_attn
+        from starcoder_flash_attn_monkey_patch import replace_starcoder_attn_with_flash_attn
 
         replace_llama_attn_with_flash_attn()
+        replace_starcoder_attn_with_flash_attn()
     compute_dtype = getattr(torch, args.bnb_4bit_compute_dtype)
 
     bnb_config = BitsAndBytesConfig(
@@ -215,7 +217,7 @@ for name, module in trainer.model.named_modules():
             module = module.to(torch.bfloat16)
     if "norm" in name:
         module = module.to(torch.float32)
-    if "lm_head" in name or "embed_tokens" in name:
+    if any(x in name for x in ["lm_head", "embed_tokens", "wte", "wpe"]):
         if hasattr(module, "weight"):
             if script_args.bf16 and module.weight.dtype == torch.float32:
                 module = module.to(torch.bfloat16)

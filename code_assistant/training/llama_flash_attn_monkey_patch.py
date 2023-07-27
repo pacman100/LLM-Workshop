@@ -1,6 +1,6 @@
 # copied from https://github.com/lm-sys/FastChat/blob/main/fastchat/train/llama_flash_attn_monkey_patch.py
 
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 import logging
 
 import torch
@@ -13,6 +13,7 @@ from einops import rearrange
 
 from flash_attn.flash_attn_interface import flash_attn_unpadded_qkvpacked_func
 from flash_attn.bert_padding import unpad_input, pad_input
+from flash_attn import flash_attn_qkvpacked_func, flash_attn_func
 
 
 def forward(
