@@ -68,4 +68,4 @@ def forward(
 
 
 def replace_starcoder_attn_with_flash_attn():
-    transformers.models.llama.modeling_gpt_bigcode.GPTBigCodeAttention.forward = forward
+    transformers.models.gpt_bigcode.modeling_gpt_bigcode.GPTBigCodeAttention.forward = forward
