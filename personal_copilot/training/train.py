@@ -322,7 +322,7 @@ def run_training(args, train_data, val_data):
         fp16=args.no_fp16,
         bf16=args.bf16,
         weight_decay=args.weight_decay,
-        run_name=f"starcoder",
+        run_name=f"starcoder-copilot",
         push_to_hub=True,
     )
 

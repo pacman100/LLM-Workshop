@@ -1,0 +1,31 @@
+python train.py \
+    --model_path "bigcode/starcoderplus" \
+    --dataset_name "smangrul/hf-stack-v1" \
+    --subset "data" \
+    --data_column "content" \
+    --split "train" \
+    --seq_length 2048 \
+    --max_steps 1000 \
+    --batch_size 8 \
+    --gradient_accumulation_steps 2 \
+    --learning_rate 2e-4 \
+    --weight_decay 0.01 \
+    --num_warmup_steps 30 \
+    --eval_freq 100 \
+    --save_freq 100 \
+    --log_freq 25 \
+    --num_workers 4 \
+    --bf16 \
+    --no_fp16 \
+    --output_dir "peft-lora-starcoderplus-personal-copilot-A100-40GB-colab" \
+    --fim_rate 0.5 \
+    --fim_spm_rate 0.5 \
+    --use_peft_lora \
+    --lora_r 8 \
+    --lora_alpha 32 \
+    --lora_dropout 0.1 \
+    --lora_target_modules "c_proj,c_attn,q_attn,c_fc,c_proj" \
+    --use_flash_attn \
+    --use_4bit_qunatization \
+    --use_nested_quant \
+    --bnb_4bit_compute_dtype "bfloat16"
