@@ -211,7 +211,7 @@ def create_datasets(tokenizer, args):
         train_data = dataset.skip(args.size_valid_set)
         train_data = train_data.shuffle(buffer_size=args.shuffle_buffer, seed=args.seed)
     else:
-        dataset = dataset.train_test_split(test_size=args.test_size, seed=args.seed)
+        dataset = dataset.train_test_split(test_size=args.test_size, seed=args.seed, shuffle=True)
         train_data = dataset["train"]
         valid_data = dataset["test"]
         print(f"Size of the train set: {len(train_data)}. Size of the validation set: {len(valid_data)}")
