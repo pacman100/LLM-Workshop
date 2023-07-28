@@ -328,17 +328,18 @@ def run_training(args, train_data, val_data):
 
     trainer = Trainer(model=model, args=training_args, train_dataset=train_data, eval_dataset=val_data)
 
-    # post process for faster training
-    for name, module in trainer.model.named_modules():
-        if isinstance(module, LoraLayer):
-            if args.bf16:
-                module = module.to(torch.bfloat16)
-        if "norm" in name:
-            module = module.to(torch.float32)
-        if any(x in name for x in ["lm_head", "embed_tokens", "wte", "wpe"]):
-            if hasattr(module, "weight"):
-                if args.bf16 and module.weight.dtype == torch.float32:
+    # post process for faster training when using PEFT + INT4 Quantization
+    if args.use_peft_lora:
+        for name, module in trainer.model.named_modules():
+            if isinstance(module, LoraLayer):
+                if args.bf16:
                     module = module.to(torch.bfloat16)
+            if "norm" in name:
+                module = module.to(torch.float32)
+            if any(x in name for x in ["lm_head", "embed_tokens", "wte", "wpe"]):
+                if hasattr(module, "weight"):
+                    if args.bf16 and module.weight.dtype == torch.float32:
+                        module = module.to(torch.bfloat16)
 
     print("Training...")
     trainer.train()
