@@ -277,7 +277,7 @@ with gr.Blocks(analytics_enabled=False, css=custom_css) as demo:
             with gr.Accordion(label="Parameters", open=False, elem_id="parameters-accordion"):
                 temperature = gr.Slider(
                     label="Temperature",
-                    value=0.6,
+                    value=0.2,
                     minimum=0.0,
                     maximum=1.0,
                     step=0.1,
