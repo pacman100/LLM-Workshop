@@ -20,6 +20,7 @@ If a question does not make any sense, or is not factually coherent, explain why
 MAX_MAX_NEW_TOKENS = 2048
 DEFAULT_MAX_NEW_TOKENS = 1024
 MAX_INPUT_TOKEN_LENGTH = 4000
+EMBED_DIM = 1024
 K = 10
 EF = 100
 search_index = None
@@ -35,7 +36,7 @@ cross_encoder = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-12-v2", max_length
 # load the index for the PEFT docs
 def load_hnsw_index(index_file):
     # Load the HNSW index from the specified file
-    index = hnswlib.Index(space="ip", dim=0)
+    index = hnswlib.Index(space="ip", dim=EMBED_DIM)
     index.load_index(index_file)
     return index
 
@@ -355,6 +356,6 @@ if __name__ == "__main__":
     parser.add_argument("--index_file", help="HNSW index file with .bin extension")
     args = parser.parse_args()
 
+    data_df = pd.read_parquet(args.input_file).reset_index()
     search_index = load_hnsw_index(args.index_file)
-    data_df = pd.read_parquet(args.input_file)
     main()
