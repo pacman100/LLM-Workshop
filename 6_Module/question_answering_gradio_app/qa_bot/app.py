@@ -23,8 +23,8 @@ MAX_INPUT_TOKEN_LENGTH = 4000
 EMBED_DIM = 1024
 K = 10
 EF = 100
-search_index = None
-data_df = None
+SEARCH_INDEX = "search_index.bin"
+DOCUMENT_DATASET = "chunked_data.parquet"
 
 torch_device = "cuda" if torch.cuda.is_available() else "cpu"
 print("Running on device:", torch_device)
@@ -173,87 +173,124 @@ def check_input_token_length(message: str, chat_history: list[tuple[str, str]], 
         )
 
 
-def main():
-    with gr.Blocks(css="style.css") as demo:
-        gr.Markdown(DESCRIPTION)
-        gr.DuplicateButton(value="Duplicate Space for private use", elem_id="duplicate-button")
+search_index = load_hnsw_index(SEARCH_INDEX)
+data_df = pd.read_parquet(DOCUMENT_DATASET).reset_index()
+with gr.Blocks(css="style.css") as demo:
+    gr.Markdown(DESCRIPTION)
+    gr.DuplicateButton(value="Duplicate Space for private use", elem_id="duplicate-button")
 
-        with gr.Group():
-            chatbot = gr.Chatbot(label="Chatbot")
-            with gr.Row():
-                textbox = gr.Textbox(
-                    container=False,
-                    show_label=False,
-                    placeholder="Type a message...",
-                    scale=10,
-                )
-                submit_button = gr.Button("Submit", variant="primary", scale=1, min_width=0)
+    with gr.Group():
+        chatbot = gr.Chatbot(label="Chatbot")
         with gr.Row():
-            retry_button = gr.Button("🔄  Retry", variant="secondary")
-            undo_button = gr.Button("↩️ Undo", variant="secondary")
-            clear_button = gr.Button("🗑️  Clear", variant="secondary")
+            textbox = gr.Textbox(
+                container=False,
+                show_label=False,
+                placeholder="Type a message...",
+                scale=10,
+            )
+            submit_button = gr.Button("Submit", variant="primary", scale=1, min_width=0)
+    with gr.Row():
+        retry_button = gr.Button("🔄  Retry", variant="secondary")
+        undo_button = gr.Button("↩️ Undo", variant="secondary")
+        clear_button = gr.Button("🗑️  Clear", variant="secondary")
 
-        saved_input = gr.State()
+    saved_input = gr.State()
 
-        with gr.Accordion(label="Advanced options", open=False):
-            system_prompt = gr.Textbox(label="System prompt", value=DEFAULT_SYSTEM_PROMPT, lines=6)
-            max_new_tokens = gr.Slider(
-                label="Max new tokens",
-                minimum=1,
-                maximum=MAX_MAX_NEW_TOKENS,
-                step=1,
-                value=DEFAULT_MAX_NEW_TOKENS,
-            )
-            temperature = gr.Slider(
-                label="Temperature",
-                minimum=0.1,
-                maximum=4.0,
-                step=0.1,
-                value=1.0,
-            )
-            top_p = gr.Slider(
-                label="Top-p (nucleus sampling)",
-                minimum=0.05,
-                maximum=1.0,
-                step=0.05,
-                value=0.95,
-            )
-            top_k = gr.Slider(
-                label="Top-k",
-                minimum=1,
-                maximum=1000,
-                step=1,
-                value=50,
-            )
-
-        gr.Examples(
-            examples=[
-                "What is 🤗 PEFT?",
-                "How do I create a LoraConfig using 🤗 PEFT?",
-                "What are the different prompt learning methods supported in PEFT?",
-                "How do I use DeepSpeed with 🤗 PEFT?",
-                "How do I combine multiple LoRA adapters?",
-            ],
-            inputs=textbox,
-            outputs=[textbox, chatbot],
-            fn=process_example,
-            cache_examples=True,
+    with gr.Accordion(label="Advanced options", open=False):
+        system_prompt = gr.Textbox(label="System prompt", value=DEFAULT_SYSTEM_PROMPT, lines=6)
+        max_new_tokens = gr.Slider(
+            label="Max new tokens",
+            minimum=1,
+            maximum=MAX_MAX_NEW_TOKENS,
+            step=1,
+            value=DEFAULT_MAX_NEW_TOKENS,
+        )
+        temperature = gr.Slider(
+            label="Temperature",
+            minimum=0.1,
+            maximum=4.0,
+            step=0.1,
+            value=1.0,
+        )
+        top_p = gr.Slider(
+            label="Top-p (nucleus sampling)",
+            minimum=0.05,
+            maximum=1.0,
+            step=0.05,
+            value=0.95,
+        )
+        top_k = gr.Slider(
+            label="Top-k",
+            minimum=1,
+            maximum=1000,
+            step=1,
+            value=50,
         )
 
-        gr.Markdown(LICENSE)
+    gr.Examples(
+        examples=[
+            "What is 🤗 PEFT?",
+            "How do I create a LoraConfig using 🤗 PEFT?",
+            "What are the different prompt learning methods supported in PEFT?",
+            "How do I use DeepSpeed with 🤗 PEFT?",
+            "How do I combine multiple LoRA adapters?",
+        ],
+        inputs=textbox,
+        outputs=[textbox, chatbot],
+        fn=process_example,
+        cache_examples=True,
+    )
 
-        textbox.submit(
+    gr.Markdown(LICENSE)
+
+    textbox.submit(
+        fn=clear_and_save_textbox,
+        inputs=textbox,
+        outputs=[textbox, saved_input],
+        api_name=False,
+        queue=False,
+    ).then(fn=display_input, inputs=[saved_input, chatbot], outputs=chatbot, api_name=False, queue=False,).then(
+        fn=check_input_token_length,
+        inputs=[saved_input, chatbot, system_prompt],
+        api_name=False,
+        queue=False,
+    ).success(
+        fn=generate,
+        inputs=[
+            saved_input,
+            chatbot,
+            system_prompt,
+            max_new_tokens,
+            temperature,
+            top_p,
+            top_k,
+        ],
+        outputs=chatbot,
+        api_name=False,
+    )
+
+    button_event_preprocess = (
+        submit_button.click(
             fn=clear_and_save_textbox,
             inputs=textbox,
             outputs=[textbox, saved_input],
             api_name=False,
             queue=False,
-        ).then(fn=display_input, inputs=[saved_input, chatbot], outputs=chatbot, api_name=False, queue=False,).then(
+        )
+        .then(
+            fn=display_input,
+            inputs=[saved_input, chatbot],
+            outputs=chatbot,
+            api_name=False,
+            queue=False,
+        )
+        .then(
             fn=check_input_token_length,
             inputs=[saved_input, chatbot, system_prompt],
             api_name=False,
             queue=False,
-        ).success(
+        )
+        .success(
             fn=generate,
             inputs=[
                 saved_input,
@@ -267,95 +304,59 @@ def main():
             outputs=chatbot,
             api_name=False,
         )
+    )
 
-        button_event_preprocess = (
-            submit_button.click(
-                fn=clear_and_save_textbox,
-                inputs=textbox,
-                outputs=[textbox, saved_input],
-                api_name=False,
-                queue=False,
-            )
-            .then(
-                fn=display_input,
-                inputs=[saved_input, chatbot],
-                outputs=chatbot,
-                api_name=False,
-                queue=False,
-            )
-            .then(
-                fn=check_input_token_length,
-                inputs=[saved_input, chatbot, system_prompt],
-                api_name=False,
-                queue=False,
-            )
-            .success(
-                fn=generate,
-                inputs=[
-                    saved_input,
-                    chatbot,
-                    system_prompt,
-                    max_new_tokens,
-                    temperature,
-                    top_p,
-                    top_k,
-                ],
-                outputs=chatbot,
-                api_name=False,
-            )
-        )
+    retry_button.click(
+        fn=delete_prev_fn,
+        inputs=chatbot,
+        outputs=[chatbot, saved_input],
+        api_name=False,
+        queue=False,
+    ).then(fn=display_input, inputs=[saved_input, chatbot], outputs=chatbot, api_name=False, queue=False,).then(
+        fn=generate,
+        inputs=[
+            saved_input,
+            chatbot,
+            system_prompt,
+            max_new_tokens,
+            temperature,
+            top_p,
+            top_k,
+        ],
+        outputs=chatbot,
+        api_name=False,
+    )
 
-        retry_button.click(
-            fn=delete_prev_fn,
-            inputs=chatbot,
-            outputs=[chatbot, saved_input],
-            api_name=False,
-            queue=False,
-        ).then(fn=display_input, inputs=[saved_input, chatbot], outputs=chatbot, api_name=False, queue=False,).then(
-            fn=generate,
-            inputs=[
-                saved_input,
-                chatbot,
-                system_prompt,
-                max_new_tokens,
-                temperature,
-                top_p,
-                top_k,
-            ],
-            outputs=chatbot,
-            api_name=False,
-        )
+    undo_button.click(
+        fn=delete_prev_fn,
+        inputs=chatbot,
+        outputs=[chatbot, saved_input],
+        api_name=False,
+        queue=False,
+    ).then(
+        fn=lambda x: x,
+        inputs=[saved_input],
+        outputs=textbox,
+        api_name=False,
+        queue=False,
+    )
 
-        undo_button.click(
-            fn=delete_prev_fn,
-            inputs=chatbot,
-            outputs=[chatbot, saved_input],
-            api_name=False,
-            queue=False,
-        ).then(
-            fn=lambda x: x,
-            inputs=[saved_input],
-            outputs=textbox,
-            api_name=False,
-            queue=False,
-        )
+    clear_button.click(
+        fn=lambda: ([], ""),
+        outputs=[chatbot, saved_input],
+        queue=False,
+        api_name=False,
+    )
 
-        clear_button.click(
-            fn=lambda: ([], ""),
-            outputs=[chatbot, saved_input],
-            queue=False,
-            api_name=False,
-        )
-
-    demo.queue(max_size=20).launch(debug=True, share=True)
+demo.queue(max_size=20).launch(debug=True, share=True)
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Script to create and use an HNSW index for similarity search.")
-    parser.add_argument("--input_file", help="Input file containing text chunks in a Parquet format")
-    parser.add_argument("--index_file", help="HNSW index file with .bin extension")
-    args = parser.parse_args()
+# if __name__ == "__main__":
+#     parser = argparse.ArgumentParser(description="Script to create and use an HNSW index for similarity search.")
+#     parser.add_argument("--input_file", help="Input file containing text chunks in a Parquet format")
+#     parser.add_argument("--index_file", help="HNSW index file with .bin extension")
+#     args = parser.parse_args()
 
-    data_df = pd.read_parquet(args.input_file).reset_index()
-    search_index = load_hnsw_index(args.index_file)
-    main()
+#     data_df = pd.read_parquet(args.input_file).reset_index()
+#     search_index = load_hnsw_index(args.index_file)
+#     main()
