@@ -237,7 +237,7 @@ with gr.Blocks(css="style.css") as demo:
         ],
         inputs=textbox,
         outputs=[textbox, chatbot],
-        fn=process_example,
+        # fn=process_example,
         cache_examples=True,
     )
 
