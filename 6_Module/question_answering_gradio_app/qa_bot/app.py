@@ -29,8 +29,8 @@ torch_device = "cuda" if torch.cuda.is_available() else "cpu"
 print("Running on device:", torch_device)
 print("CPU threads:", torch.get_num_threads())
 
-biencoder = SentenceTransformer("intfloat/e5-large-v2")
-cross_encoder = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-12-v2", max_length=512)
+biencoder = SentenceTransformer("intfloat/e5-large-v2", device=torch_device)
+cross_encoder = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-12-v2", max_length=512, device=torch_device)
 
 # load the index for the PEFT docs
 def load_hnsw_index(index_file):
@@ -42,7 +42,7 @@ def load_hnsw_index(index_file):
 
 def create_query_embedding(query):
     # Encode the query to get its embedding
-    embedding = biencoder.encode([query], normalize_embeddings=True, device=torch_device)[0]
+    embedding = biencoder.encode([query], normalize_embeddings=True)[0]
     return embedding
 
 
@@ -59,7 +59,7 @@ def rerank_chunks_with_cross_encoder(query, chunks):
     pairs = [(query, chunk) for chunk in chunks]
 
     # Get scores for each query-chunk pair using the cross encoder
-    scores = cross_encoder.predict(pairs, device=torch_device)
+    scores = cross_encoder.predict(pairs)
 
     # Sort the chunks based on their scores in descending order
     sorted_chunks = [chunk for _, chunk in sorted(zip(scores, chunks), reverse=True)]
