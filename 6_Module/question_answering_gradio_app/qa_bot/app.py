@@ -145,7 +145,7 @@ def generate(
     relevant_chunks = find_nearest_neighbors(query_embedding)
     reranked_relevant_chunks = rerank_chunks_with_cross_encoder(message, relevant_chunks)
     qa_prompt = create_qa_prompt(message, reranked_relevant_chunks)
-    print(f"{qa_prompt=}")
+    # print(f"{qa_prompt=}")
 
     history = history_with_input[:-1]
     generator = run(qa_prompt, history, system_prompt, max_new_tokens, temperature, top_p, top_k)
