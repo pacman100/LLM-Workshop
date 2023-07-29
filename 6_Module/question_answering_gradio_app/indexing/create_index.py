@@ -29,7 +29,7 @@ def main():
     args = parser.parse_args()
 
     # Load a pre-trained model
-    model = SentenceTransformer(args.model_name_or_path)
+    model = SentenceTransformer(args.model_name_or_path, device="cuda")
 
     # Read the input Parquet file
     df = pd.read_parquet(args.input_file)
