@@ -2,6 +2,7 @@ huggingface_hub
 scipy
 numpy
 pandas
+gradio
 accelerate
 transformers
 git+https://github.com/huggingface/peft
