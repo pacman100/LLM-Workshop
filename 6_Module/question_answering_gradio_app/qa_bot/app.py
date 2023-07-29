@@ -21,7 +21,7 @@ MAX_MAX_NEW_TOKENS = 2048
 DEFAULT_MAX_NEW_TOKENS = 1024
 MAX_INPUT_TOKEN_LENGTH = 4000
 EMBED_DIM = 1024
-K = 10
+K = 5
 EF = 100
 SEARCH_INDEX = "search_index.bin"
 DOCUMENT_DATASET = "chunked_data.parquet"
@@ -91,13 +91,7 @@ DEFAULT_MAX_NEW_TOKENS = 1024
 MAX_INPUT_TOKEN_LENGTH = 4000
 
 DESCRIPTION = """
-# Llama-2 7B Chat
-
-This Space demonstrates model [Llama-2-7b-chat](https://huggingface.co/meta-llama/Llama-2-7b-chat) by Meta, a Llama 2 model with 7B parameters fine-tuned for chat instructions. Feel free to play with it, or duplicate to run generations without a queue! If you want to run your own service, you can also [deploy the model on Inference Endpoints](https://huggingface.co/inference-endpoints).
-
-🔎 For more details about the Llama 2 family of models and how to use them with `transformers`, take a look [at our blog post](https://huggingface.co/blog/llama2).
-
-🔨 Looking for an even more powerful model? Check out the [13B version](https://huggingface.co/spaces/huggingface-projects/llama-2-13b-chat) or the large [70B model demo](https://huggingface.co/spaces/ysharma/Explore_llamav2_with_TGI).
+# PEFT Docs QA Chatbot 🤗
 """
 
 LICENSE = """
@@ -230,10 +224,9 @@ with gr.Blocks(css="style.css") as demo:
     gr.Examples(
         examples=[
             "What is 🤗 PEFT?",
-            "How do I create a LoraConfig using 🤗 PEFT?",
-            "What are the different prompt learning methods supported in PEFT?",
-            "How do I use DeepSpeed with 🤗 PEFT?",
-            "How do I combine multiple LoRA adapters?",
+            "How do I create a LoraConfig?",
+            "What are the different tuners supported?",
+            "How do I combine multiple LoRA adapter to create new adapter?",
         ],
         inputs=textbox,
         outputs=[textbox, chatbot],
