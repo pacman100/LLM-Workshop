@@ -350,8 +350,8 @@ def main():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Script to create and use an HNSW index for similarity search.")
-    parser.add_argument("input_file", help="Input file containing text chunks in a Parquet format")
-    parser.add_argument("index_file", help="HNSW index file with .bin extension")
+    parser.add_argument("--input_file", help="Input file containing text chunks in a Parquet format")
+    parser.add_argument("--index_file", help="HNSW index file with .bin extension")
     args = parser.parse_args()
 
     search_index = load_hnsw_index(args.index_file)
