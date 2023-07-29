@@ -24,9 +24,9 @@ def create_hnsw_index(embeddings, M=16, efC=100):
 
 def main():
     parser = argparse.ArgumentParser(description="Script to create an HNSW index from text chunks in a Parquet file.")
-    parser.add_argument("model_name_or_path", default="intfloat/e5-large-v2", help="model_name_or_path")
-    parser.add_argument("input_file", help="Input file containing text chunks in a Parquet format")
-    parser.add_argument("output_file", help="Output file to save the HNSW index with .bin extension")
+    parser.add_argument("--model_name_or_path", default="intfloat/e5-large-v2", help="model_name_or_path")
+    parser.add_argument("--input_file", help="Input file containing text chunks in a Parquet format")
+    parser.add_argument("--output_file", help="Output file to save the HNSW index with .bin extension")
     args = parser.parse_args()
 
     # Load a pre-trained model
