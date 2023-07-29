@@ -62,7 +62,7 @@ class DialogueTemplate(ModelHubMixin):
                 prompt += f"{self.user_token} {message['content']}  {self.end_token} "
             else:
                 prompt += f"{self.assistant_token} {message['content']}  {self.end_token} "
-        prompt += f"{self.assistant_token} "
+        prompt += f"{self.assistant_token}"
         return prompt
 
     def get_dialogue(self):
