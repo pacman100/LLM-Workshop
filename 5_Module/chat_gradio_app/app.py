@@ -53,7 +53,6 @@ for model_name_or_path in peft_models:
 model.to(torch_device)
 model.eval()
 print(model)
-print(model.hf_device_map)
 
 
 def randomize_seed_generator():
