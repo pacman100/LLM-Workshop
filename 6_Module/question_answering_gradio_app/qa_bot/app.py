@@ -159,7 +159,7 @@ def generate(
 
 
 def process_example(message: str) -> tuple[str, list[tuple[str, str]]]:
-    generator = generate(message, [], DEFAULT_SYSTEM_PROMPT, 1024, 1, 0.95, 50)
+    generator = generate(message, [], DEFAULT_SYSTEM_PROMPT, 1024, 0.2, 0.95, 50)
     for x in generator:
         pass
     return "", x
@@ -210,7 +210,7 @@ with gr.Blocks(css="style.css") as demo:
             minimum=0.1,
             maximum=4.0,
             step=0.1,
-            value=1.0,
+            value=0.2,
         )
         top_p = gr.Slider(
             label="Top-p (nucleus sampling)",
