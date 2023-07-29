@@ -1,0 +1,7 @@
+huggingface_hub
+scipy
+numpy
+pandas
+accelerate
+transformers
+git+https://github.com/huggingface/peft
