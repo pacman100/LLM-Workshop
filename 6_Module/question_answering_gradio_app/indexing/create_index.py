@@ -14,7 +14,7 @@ def get_sentence_embeddings(model, sentences):
 def create_hnsw_index(embeddings, M=16, efC=100):
     # Create the HNSW index
     num_dim = embeddings.shape[1]
-    ids = embeddings.shape[0]
+    ids = np.arange(embeddings.shape[0])
     index = hnswlib.Index(space="ip", dim=num_dim)
     index.init_index(max_elements=embeddings.shape[0], ef_construction=efC, M=M)
     index.add_items(embeddings, ids)
