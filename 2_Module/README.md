@@ -57,6 +57,35 @@ The new dataset after one-hot encoding will look like this:
 
 Each person's favorite color is now represented by a one-hot encoded binary vector, making it suitable for various machine learning algorithms.
 
+#### Advantages of One-Hot Encoding:
+
+1. **Simple Representation:** One-Hot Encoding is straightforward to implement and understand. It converts categorical data into a binary representation, where each category is represented by a unique binary vector.
+
+2. **Preserves Categorical Information:** One-Hot Encoding preserves the categorical information without introducing any ordinal relationship between categories.
+
+3. **Compatibility with Machine Learning Algorithms:** Many machine learning algorithms, especially those based on numerical calculations, require input data to be in numerical form. One-Hot Encoding is a convenient way to convert categorical data into a format suitable for these algorithms.
+
+4. **Handling Non-Numeric Data:** One-Hot Encoding allows the inclusion of non-numeric data, such as text labels or categorical variables, in machine learning models. This enables the utilization of valuable information from such data in the modeling process.
+
+5. **No Assumptions About Data Distribution:** One-Hot Encoding does not make any assumptions about the distribution of categorical data. It treats each category equally and independently, making it suitable for various data distributions.
+
+6. **Interpretability:** The resulting binary vectors are easily interpretable, making it easier to inspect and understand the relationship between categories and the encoded features.
+
+7. **No Magnitude Impact:** Since each category is represented by a binary vector, there is no magnitude impact on the encoding. All feature values are either 0 or 1, avoiding any magnitude-related biases.
+
+8. **Handling Missing Data:** One-Hot Encoding can handle missing data gracefully. Missing values are simply represented as all 0s in the binary vectors, allowing algorithms to still process and learn from the available information.
+
+9. **Useful for Categorical Features with Low Cardinality:** One-Hot Encoding is particularly useful for categorical features with low cardinality (a small number of unique categories), as it does not introduce significant dimensionality issues in such cases.
+
+#### Limitations of One-Hot Encoding:
+
+1. **High Dimensionality:** One-Hot Encoding creates a binary vector for each word in the dataset. As the number of unique word increases, the dimensionality of the encoded feature space also increases significantly. This can lead to a sparse and high-dimensional representation, making it computationally expensive and memory-intensive.
+
+2. **No Semantic Information:** One-Hot Encoding treats all words as independent and unrelated. It does not capture any semantic similarity or hierarchical relationship between words. As a result, it may not be suitable for tasks that require understanding relationships or similarities between different words.
+
+3. **Curse of Dimensionality:** The high dimensionality of One-Hot Encoding can lead to the curse of dimensionality, where the sparsity of the data negatively impacts the performance of machine learning algorithms, especially for small or limited datasets.
+
+
 
 ### Bag of words
 
@@ -110,7 +139,19 @@ Step 3: Encoding
 
 The vectors show the frequency of each word in the respective documents. For example, in Document 1, the word "the" appears twice, "cat" appears once, "chased" appears once, and so on.
 
-#### Limitations of One-Hot Encoding and Bag of Words 
+#### Advantages over One-Hot Encoding:
+1. **More informative:** In addition to word being present or not, it also encodes the frequency of it providing more information. This can be used for applications like semantic similairty wherein similar documents are likely to have similar word frequencies, which can be used in tasks like document clustering or recommendation systems. 
+
+#### Limitations 
+1. **Loss of Word Order:** BoW ignores the word order and the grammatical structure of the text, treating the text as an unordered collection of words. This loss of sequence information can result in the loss of crucial context and meaning, especially in tasks like sentiment analysis or natural language generation.
+
+2. **Fixed Size Representation:** BoW generates a fixed-size vector for each document, where the dimensionality is determined by the size of the vocabulary. This can lead to a loss of information, as long documents may be truncated, and short documents may be padded, leading to unequal representation.
+
+3. **Frequency-based Bias:** BoW relies heavily on the frequency of words in a document. This may cause common words (stopwords) that occur frequently in many documents to dominate the representation, while rare, yet important, words might get overshadowed.
+
+4. **Out-of-Vocabulary Words:** Words that are not present in the vocabulary (words unseen during training) are usually ignored or replaced with a special token. This can result in losing valuable information from the input text, especially for domain-specific or rare terms.
+
+5. **Sparsity:** BoW representation often results in sparse vectors, where most of the entries are zeros. Sparse data can be challenging to handle, especially for certain machine learning algorithms that assume dense feature vectors.
 
 
 ### TF-IDF (Term Frequency-Inverse Document Frequency)
@@ -131,118 +172,211 @@ The TF-IDF formula consists of two parts: Term Frequency (TF) and Inverse Docume
 
 The TF-IDF score for a word in a document is obtained by multiplying its TF and IDF values.
 
-#### Example of TF-IDF
+Let's consider an example of using TF-IDF for retrieving relevant products to a given query in an e-commerce platform.
 
-Let's illustrate TF-IDF with a small corpus containing three documents:
+Suppose we have an e-commerce platform that sells electronic gadgets, and we want to use TF-IDF to retrieve relevant products for a user's search query.
 
-1. Document 1: "The cat chased the mouse."
-2. Document 2: "The dog barked at the cat."
-3. Document 3: "The mouse ran away from the cat and the dog."
+Our product database contains the following three product descriptions:
 
-Step 1: Calculate TF
+1. Product 1: "High-quality wireless headphones with noise-canceling technology."
+2. Product 2: "Powerful and compact Bluetooth speaker for immersive sound experience."
+3. Product 3: "Smartphone with an advanced camera system and long-lasting battery."
 
-For example, in Document 1:
+Let's say a user enters the query: "wireless headphones sound quality"
 
-- TF("the") = 2 / 5 = 0.4
-- TF("cat") = 1 / 5 = 0.2
-- TF("chased") = 1 / 5 = 0.2
-- TF("mouse") = 1 / 5 = 0.2
-- and so on for all words.
+Step 1: Preprocessing and Calculating Term Frequencies
 
-Step 2: Calculate IDF
+We first preprocess the query and product descriptions by tokenizing the text, converting everything to lowercase, and removing any stopwords.
 
-For example, in the entire corpus:
+The term frequencies (TF) for the query are as follows:
 
-- IDF("the") = log(3 / 3) = 0
-- IDF("cat") = log(3 / 2) ≈ 0.176
-- IDF("chased") = log(3 / 1) ≈ 1.099
-- IDF("mouse") = log(3 / 2) ≈ 0.176
-- and so on for all unique words.
+| Term         | TF(query, Product 1) | TF(query, Product 2) | TF(query, Product 3) |
+|--------------|-------------------|--------------|-------------------|
+| wireless     | 1                 | 0                 | 0                 |
+| headphones   | 1                 | 0                 | 0                 |
+| sound        | 0                 | 1                 | 0                 |
+| quality      | 1                 | 0                 | 0                 |
 
-Step 3: Calculate TF-IDF
+Step 2: Calculating Inverse Document Frequencies (IDF)
 
-Finally, we calculate the TF-IDF score for each word in each document:
+Next, we calculate the inverse document frequency (IDF) for each term in the query. In this example, since we only have three products, the IDF values for all terms will be the same.
 
-For example, in Document 1:
+| Term         | IDF("term")      |
+|--------------|------------------|
+| wireless     | log(3/1) ≈ 0.585 |
+| headphones   | log(3/1) ≈ 0.585 |
+| sound        | log(3/1) ≈ 0.585 |
+| quality      | log(3/1) ≈ 0.585 |
 
-- TF-IDF("the") ≈ 0.4 * 0 ≈ 0
-- TF-IDF("cat") ≈ 0.2 * 0.176 ≈ 0.035
-- TF-IDF("chased") ≈ 0.2 * 1.099 ≈ 0.22
-- TF-IDF("mouse") ≈ 0.2 * 0.176 ≈ 0.035
-- and so on for all words.
+Step 3: Calculate TF-IDF Scores
 
-### BM25 Algorithm
+We calculate the TF-IDF scores for each product based on the query:
 
-BM25 (Best Matching 25) is a ranking function used in information retrieval and search engines to evaluate the relevance of a document to a given query. It is an extension of the TF-IDF (Term Frequency-Inverse Document Frequency) model and is designed to address some of its limitations.
+| Product      | TF-IDF(query, Product) |
+|--------------|----------------------|
+| Product 1    | 1 * 0.585 + 1 * 0.585 + 0 * 0.585 + 1 * 0.585 = 1.755 |
+| Product 2    | 0 * 0.585 + 0 * 0.585 + 1 * 0.585 + 0 * 0.585 = 0.585 |
+| Product 3    | 0 * 0.585 + 0 * 0.585 + 0 * 0.585 + 0 * 0.585 = 0 |
 
-#### How BM25 Works
+Step 4: Ranking the Products
 
-BM25 is based on probabilistic information retrieval and takes into account the term frequency, document length, and term frequency saturation. The formula for BM25 is as follows:
+Based on the TF-IDF scores, we can rank the products in descending order of relevance to the user's query:
 
-```latex
-BM25(q, D) = \sum \left( \frac{{tf(t, D) \cdot (k + 1)}}{{tf(t, D) + k \cdot (1 - b + b \cdot (\frac{{\vert D \vert}}{{avgdl}}))}} \right) \cdot IDF(t, D)
-```
+1. Product 1: "High-quality wireless headphones with noise-canceling technology." (TF-IDF score: 1.755)
+2. Product 2: "Powerful and compact Bluetooth speaker for immersive sound experience." (TF-IDF score: 0.585)
+3. Product 3: "Smartphone with an advanced camera system and long-lasting battery." (TF-IDF score: 0)
 
-Where:
-- `q`: Represents the query terms.
-- `D`: Denotes the document being scored.
-- `tf(t, D)`: Term frequency of term `t` in document `D`.
-- `IDF(t, D)`: Inverse Document Frequency of term `t` in the entire collection of documents.
-- `|D|`: Length (number of words) of document `D`.
-- `avgdl`: Average document length in the entire collection.
-- `k` and `b`: Tuning parameters that control the impact of term frequency and document length normalization, respectively.
+This example demonstrates how TF-IDF can be used to retrieve relevant products in an e-commerce platform based on a user's search query. The TF-IDF scores help in ranking the products in order of their relevance, making it easier for users to find the most suitable products for their needs.
 
-#### Example of BM25
+#### Advantages over Bag of Words:
 
-Let's consider a simple example with a small document collection and a query.
+1. **Term Importance:** TF-IDF considers not only the term frequency in a document (TF) but also the rarity of the term across the entire document collection (IDF). This means that common words that appear frequently in many documents will have a lower TF-IDF score, reducing their impact on the representation. Rare and important words that appear in specific documents will have higher TF-IDF scores, making them more influential in the analysis. This naturally handles stopwords (common words like "the," "and," "is," etc.), which typically have little semantic value
 
-Suppose we have the following three documents:
+2. **Document Relevance**: TF-IDF helps in identifying relevant documents for a given query. By focusing on important terms and discounting common words, TF-IDF gives higher scores to documents that contain rare and relevant words related to the query. This makes them great for Semantic Similarity. Specifically useful for straighforward queries such as books/novels wherein customers directly just type the exact name of books such as "Harry Potter and the Goblet of Fire" etc. Here, syntactic match is enough.  
 
-1. Document 1: "The cat chased the mouse."
-2. Document 2: "The dog barked at the cat."
-3. Document 3: "The mouse ran away from the cat and the dog."
+#### Limitations
 
-Let's say our query is: "cat mouse"
+1. **Absence of Semantic Understanding:** TF-IDF treats each term independently and does not capture semantic relationships between words. It cannot understand the meaning or context of words, making it less suitable for tasks that require a deeper understanding of language semantics. For example, it fails to capture that "Geyser" and "Water Heater" mean the same thing. It also fails to capture that "apple" has different meaning in "She ate a juicy red apple." (Fruit) when compared to "I bought a new Apple laptop." (Brand of technology products), i.e., failing to capture contextual representation of words.
 
-Step 1: Calculate Term Frequencies and IDF
-
-First, we calculate the term frequencies and inverse document frequencies for each term in the query and the documents.
-
-| Term   | TF("term", D1) | TF("term", D2) | TF("term", D3) | IDF("term") |
-|--------|---------------|---------------|---------------|------------|
-| cat    | 1             | 1             | 1             | log(3/2)   |
-| mouse  | 1             | 0             | 1             | log(3/2)   |
-
-Step 2: Calculate BM25 Scores
-
-Next, we calculate the BM25 scores for each document with respect to the query.
-
-| Document | BM25(q, D)  |
-|----------|-------------|
-| D1       | 0.0 + 0.0   |
-| D2       | 0.0 + 0.0   |
-| D3       | 0.0 + 0.0   |
-
-As this is a very simple example with only two terms in the query, the BM25 scores for all documents are zero.
+2. **Scalability:** For very large document collections, computing the TF-IDF representation for each document can become computationally expensive and memory-intensive. Additionally, maintaining a large vocabulary might also pose challenges.
 
 ### Word2vec
 
+To address the aforementioned limitations, word embeddings offer an efficient and compact(dense) way of representing words, ensuring that words with similar meanings have similar encodings. Word Embedding is a vector containing floating point values and hence the term "Dense Representation". The values for the embedding are trainable parameters which are learned similarly
+to a model learning the weights for a dense layer. The dimensionality of the word representations is typically much smaller than the number of words in the dictionary. 
+
+One of the foundational work in this regard is the `word2vec`. It proposes 2 methods to learn word embeddings:
+1. Continuous Bag of Words: Predicts the current word based on the context 
+2. Continuous Skip-Gram: Predicts surrounding words given the current word
+
+![word2vec](../assets/word2vec.png)
+[Source [Efficient Estimation of Word Representations in Vector Space](https://arxiv.org/pdf/1301.3781.pdf)]
+
+Below is an example for Skip-Gram model:
+
+Let's consider a small corpus with the following sentence:
+
+"Learning deep learning is essential for artificial intelligence."
+
+Step 1: Prepare Training Data
+
+To train the skip-gram model, we first create training pairs of target and context words. We define a context window size (e.g., 2), which determines how many words on either side of the target word will be considered as context words.
+
+For the sentence above, with a context window size of 2, the training pairs would be:
+
+- (Learning, deep)
+- (Learning, learning)
+- (deep, Learning)
+- (deep, learning)
+- (deep, is)
+- (learning, Learning)
+- (learning, deep)
+- (learning, is)
+- (learning, essential)
+- (is, deep)
+- (is, learning)
+- (is, essential)
+- (essential, learning)
+- (essential, is)
+- (artificial, is)
+- (artificial, essential)
+- (intelligence, essential)
+- (intelligence, artificial)
+
+Step 2: Train the Skip-Gram Model
+
+The skip-gram model takes these training pairs as input and tries to learn word embeddings by optimizing its parameters to predict the context words given the target word. The goal is to maximize the probability of the context words given the target word.
+
+Step 3: Word Embeddings
+
+Once the skip-gram model is trained, it will generate word embeddings for each word in the vocabulary. These embeddings are dense and lower-dimensional representations of words, capturing the semantic relationships between words based on their co-occurrence patterns in the training data.
+
+The resulting word embeddings might look like:
+
+| Word       | Embedding Vector            |
+|------------|----------------------------|
+| Learning   | [0.2, 0.5, -0.1, ...]       |
+| deep       | [-0.3, 0.7, 0.4, ...]       |
+| learning   | [0.1, -0.6, 0.8, ...]       |
+| is         | [0.5, 0.3, -0.2, ...]       |
+| essential  | [-0.4, 0.2, 0.6, ...]       |
+| artificial | [0.7, 0.1, -0.5, ...]       |
+| intelligence | [-0.2, -0.3, 0.9, ...]    |
+| ...        | ...                        |
+
+Step 4: Word Similarity
+
+The learned word embeddings capture semantic similarities between words. Words with similar meanings or contexts will have similar embeddings. For example, the embeddings for "Learning" and "learning" are likely to be close to each other since they appear in similar contexts in the training data.
+
+With these word embeddings, we can perform various NLP tasks, such as word semantic similarity, document classification, and even text generation, by leveraging the semantic relationships captured in the dense word embeddings.
+
+Word embeddings have interesting properties in terms of geometrical relationships. For example, in the below image we see that linear relationships between semantically similar embeddings, i.e., `vector(Japan)−vector(Tokyo)+vector(Russia) ~ vector(Moscow)`
+
+![linear-relationships](../assets/linear-relationships.svg)
+
+[Source [Embeddings: Translating to a Lower-Dimensional Space](https://developers.google.com/machine-learning/crash-course/embeddings/translating-to-a-lower-dimensional-space)]
+
+#### Limitations:
+
+1. **Absence of Context Understanding:** Since, the word embeddings are static, it lacks the ability to model semantic relationship between words based on context. Again, it fails to capture that "apple" has different meaning in "She ate a juicy red apple." (Fruit) when compared to "I bought a new Apple laptop." (Brand of technology products).
+
 ## Encoder-Decoder Models
 
-### RNNs
+Let deep dive into the problem of Machine Translation. i.e., translating text from one language to another, e.g., translating Hindi to English. As the input length can be differnt than the ouput length, it demands for a architecture which can handle this. The encoder-decoder architecture is devised for this purpose. Encoder converts the input sentence into fixed representation and decoder takes this fixed representation and converts it into target sentence sequentially. Below is a diagram showing the process.
 
-### LSTMs
+![encoder-decoder](../assets/encoder-decoder.png)
+[Source [cs224n 2022](https://web.stanford.edu/class/cs224n/slides/cs224n-2022-lecture05-rnnlm.pdf)]
+
+To encode and decode, we need to capture the semantic and contextual representation of words. One way to capture semantic and contextual relationship is to condition the prediction of next word based on all the words generated so far. This results in a recurrence relationship which is nicely captured by Recurrent neural Networks (RNNs).
+
+### Recurrrent Neural Networks (RNNs)
+
+Recurrent Neural Networks (RNNs) are a type of neural network designed to process sequential data, such as time series or natural language. They have feedback connections that allow them to maintain a hidden state, enabling them to retain information about past inputs. This hidden state serves as a memory, allowing RNNs to consider the context of each input in relation to previous inputs. RNNs are particularly effective for tasks involving sequential patterns, like language modeling, machine translation, and speech recognition. 
+
+![RNN](../assets/rnn.png)
+[Source [cs224n 2022](https://web.stanford.edu/class/cs224n/slides/cs224n-2022-lecture05-rnnlm.pdf)]
+
+#### Limitations:
+
+1. **Exploding or Vanishing Gradients:** They suffer from vanishing or exploding gradient problems, which can make it challenging for them to capture long-range dependencies effectively. It is also due to Backpropagation through time.
+2. **Recurrent computation is slow:** Doesn't allow for parallelization of operations leading to suboptimal usage of hardware resources.
+3. **Emprically, RNNs underperform to handle long-term dependencies**
+
+### Long Short-Term Memory Models (LSTMs)
+
+Long Short Term Memory networks – usually just called “LSTMs” – are a special kind of RNN, capable of learning long-term dependencies. LSTMs are explicitly designed to avoid the long-term dependency problem. Remembering information for long periods of time is practically their default behavior, not something they struggle to learn!
+
+Instead of just the hidden state, they have an additional state called cell state which makes it easier for information to flow through unchanged, thereby allowing to handle long-term dependencies. It has a "forget gate layer", "input gate layer" and "output gate layer" controlling what information to forget and update and what to ouput as part of next hidden state. 
+Below is a diagram of the LSTM architecture:
+
+![LSTM](../assets/LSTM3-chain.png)
+[Source [Understanding LSTM Networks](https://colah.github.io/posts/2015-08-Understanding-LSTMs/)]
+
+![LSTM layers](../assets/LSTM_layers.png)
+[Source [cs224n 2022](https://web.stanford.edu/class/cs224n/slides/cs224n-2022-lecture06-fancy-rnn.pdf)]
+
+#### Limitations of Encoder-Decoder models we have seen so far
+
+Encoder-Decoder models help in Many-to-Many foramt problems but have their own limitations. 
+1. **Information Bottleneck Problem:** Compressing whole information of a given sentence into fixed-size vector often leads in loss of valuable information. 
+2. **Vanishing Gradients:** Backpropagation through time leads to disappearance of information as it backpropagates. This is because gradients with less than 1 at each steps leading to smaller and smaler and smaller gradients vanishing to 0.
 
 ### LSTMs with Attention
+
+Now, let's take inspiration from Human's attention span. **Our brain focuses on a limited part of the whole information. Attention is a mechanism that enables us to selectively focus on a specific part of the whole information as required by the task.** Can this be extended to Deep Learning models? Yes.
+
+Attention techniques allows models to retain complete information from the source sentence without compression. Thereby, **solving the information bottleneck**. It enables the Decoder to selectively focus on particular parts of the source sentence while sequentially generating the output, thereby **being more "human-like" and "somewhat explainable"**. it also **solves the vanishing gradient problem** by providing shorcut for gradients to flow to faraway state. Below is a diagram showing the architecture of using LSTMs with Attention.
+
+![LSTM with attention](../assets/LSTM_with_attention.png)
 
 ## Transformer
 
 ### Attention is all you Need
 
-### BERT
+### Bi-Directional Encoder Representation From Transformers (BERT)
 
 
-### GPT-1
+### (Generative Pre-Trained Models) GPT-1
 
 
 ### GPT-2
@@ -266,6 +400,10 @@ As this is a very simple example with only two terms in the query, the BM25 scor
 ### Instruction Aligned
 
 ### LIMA
+
+
+## References
+
 
 
 
