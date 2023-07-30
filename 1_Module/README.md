@@ -72,9 +72,3 @@ See it in action at [hf.co/chat](https://hf.co/chat/):
 
 
 https://github.com/pacman100/DHS-LLM-Workshop/assets/13534540/be64c6f6-632b-401c-bc17-88484abd612e
-
-
-
-
-
-
