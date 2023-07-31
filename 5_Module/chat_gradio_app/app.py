@@ -1,23 +1,16 @@
-import datetime
 import os
 import random
 import re
-from io import StringIO
 from threading import Thread
 
 import gradio as gr
-import pandas as pd
-from huggingface_hub import upload_file
-from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer, BitsAndBytesConfig
-from peft import PeftModel, PeftConfig
+from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
+from peft import PeftModel
 import torch
 
 from dialogues import DialogueTemplate
 
 HF_TOKEN = os.environ.get("HF_TOKEN", None)
-API_TOKEN = os.environ.get("API_TOKEN", None)
-DIALOGUES_DATASET = "smangrul/codegen-25-instrcut-dialogues"
-ENDPOINT = os.environ.get("ENDPOINT", None)
 SYSTEM_PROMPT = """You are a helpful, respectful and honest assistant. Always answer as helpfully \
 as possible, while being safe. Your answers should not include any harmful, \
 unethical, racist, sexist, toxic, dangerous, or illegal content. Please ensure that \

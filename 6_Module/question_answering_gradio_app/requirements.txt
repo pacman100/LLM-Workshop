@@ -3,6 +3,7 @@ beautifulsoup4
 sentence_transformers
 hnswlib
 langchain
+chromadb
 huggingface_hub
 scipy
 numpy
