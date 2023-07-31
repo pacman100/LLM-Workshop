@@ -10,12 +10,26 @@ Steps involved in creating a QA Chatbot:
 We are considering the [PEFT documentation](https://huggingface.co/docs/peft/index) as an example here. 
 1. Go to [doc_scraper](../6_Module/question_answering_gradio_app/doc_scraper/) and see how the code we generated using ChatGPT is working.
 
+Go to [doc_scraper](../6_Module/question_answering_gradio_app/doc_scraper/) and run:
+```
+scrapy crawl hf_docs
+```
 
 ### Chunking the text
 1. Go to [chunking](../6_Module/question_answering_gradio_app/chunking/) and see the simple chunking algorithm using chunk length and chunk overlap.
 
+Go to [question_answering_gradio_app](../6_Module/question_answering_gradio_app/) and run:
+```
+python chunking/chunking.py --chunk_length=448 --chunk_overlap=128 --folder_path "doc_scraper/output" --output_file "chunked_data.parquet"
+```
+
 ### Indexing
-1. Go to [indexing](../6_Module/question_answering_gradio_app/indexing/) and see how to index the chunks that we have created using `hnswlib` and one of the best open source `Bi-Encoder` model as per [MTEB Benchmark](https://huggingface.co/spaces/mteb/leaderboard) [intfloat/e5-large-v2](https://huggingface.co/intfloat/e5-large-v2). 
+1. Go to [indexing](../6_Module/question_answering_gradio_app/indexing/) and see how to index the chunks that we have created using `hnswlib` and one of the best open source `Bi-Encoder` model as per [MTEB Benchmark](https://huggingface.co/spaces/mteb/leaderboard) [intfloat/e5-large-v2](https://huggingface.co/intfloat/e5-large-v2).
+
+Go to [question_answering_gradio_app](../6_Module/question_answering_gradio_app/) and run:
+```
+python indexing/create_index.py --input_file="chunked_data.parquet" --output_file="search_index.bin"
+```
 
 ### Retrieval and Re-ranking
 
@@ -43,14 +57,13 @@ Helpful Answer:
 ```
 pip install -r requirements.txt
 ```
-2. Go to [qa_bot](../6_Module/question_answering_gradio_app/qa_bot) to see how all the pieces tie together in creating the RAG based QA ChatBot
-2. run the app via `python app.py`
+2. Go to [qa_bot](../6_Module/question_answering_gradio_app) to see how all the pieces tie together in creating the RAG based QA ChatBot
+2. run the app via `python qa_bot/app.py`
+
+![QA_Chatbot](../assets/QA_Chatbot.png)
 
 ## Using Langchain
 
-1. Go to this notebook to see how langchain makes it easy.
-
-
-
+1. Go to [Langchain_with_HF_QA_bot](../6_Module/Langchain_with_HF_QA_bot.ipynb) to see how langchain makes it easy as a framework to bring together all the steps aboves in simple APIs. We will be using open source models from 🤗 Hub, Langchain and Chroma vector DB.
 
 

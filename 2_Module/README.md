@@ -623,3 +623,6 @@ with human feedback](https://arxiv.org/pdf/2203.02155.pdf)
 **Idea**: Instead of automated metrics like `BLUE`/`ROUGE`/`Accuracy`, what if we use human feedback itself to improve the LLMs to follow instructions and **align** with human incentives of making the model **Helpful, Harmless and Honest**.
 
 Nice Gist expalin the RLHF process: [Reinforcement Learning from Human Feedback (RLHF) - a simplified explanation](https://gist.github.com/JoaoLages/c6f2dfd13d2484aa8bb0b2d567fbf093)
+
+## Additional References
+- [Multimodal Deep Learning](https://arxiv.org/pdf/2301.04856.pdf)
