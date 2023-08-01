@@ -15,7 +15,7 @@
 
 1. Go to [train.py](../personal_copilot/training/train.py) for the training code using 🤗 Accelerate, 🤗 Transformers Trainer and 🤗 PEFT.
 2. Go to [run_peft.sh](../personal_copilot/training/run_peft.sh) to run using PEFT.
-3. Infer using the notebook here.
+3. Infer using the notebook [PEFT Personal Code Co-Pilot.ipynb](../5_Module/PEFT_Personal_Code_CoPilot.ipynb).
 
 ## Gradio Application
 
@@ -33,3 +33,15 @@ python app.py
 
 https://github.com/pacman100/DHS-LLM-Workshop/assets/13534540/a8d5a5dc-ffb3-41f9-bb85-05180c1bb926
 
+## AutoTrain Advanced - No Code solution making it the EASIEST!
+
+Check out [The EASIEST way to finetune LLAMA-v2 on local machine!](https://youtu.be/3fsn19OI_C8) to know how to use Autotrain Advanced for PEFT training wihtout having to write any code.
+
+Codebase: [autotrain-advanced](https://github.com/huggingface/autotrain-advanced)
+
+All that you need to run is:
+```
+pip install autotrain-advanced
+
+autotrain llm --train --project_name my-llm --model meta-llama/Llama-2-7b-hf --data_path . --use_peft --use_int4 --learning_rate 2e-4 --train_batch_size 12 --num_train_epochs 3 --trainer sft
+``` 
