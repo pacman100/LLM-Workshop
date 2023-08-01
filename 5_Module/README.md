@@ -31,7 +31,7 @@ python app.py
 ```
 5. Wait for 10-15 minutes for the app to load the big models and merge the peft models into it. Play around with the model! 🤗
 
-https://github.com/pacman100/DHS-LLM-Workshop/assets/13534540/a8d5a5dc-ffb3-41f9-bb85-05180c1bb926
+https://github.com/pacman100/DHS-LLM-Workshop/assets/13534540/673fb4a7-37b4-4581-a90c-ef157ee3441b
 
 ## AutoTrain Advanced - No Code solution making it the EASIEST!
 
