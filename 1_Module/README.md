@@ -70,5 +70,7 @@ I leveraged `Llama V2-70B` model to help me with the content for this workshop.
 
 See it in action at [hf.co/chat](https://hf.co/chat/):
 
+https://github.com/pacman100/DHS-LLM-Workshop/assets/13534540/2ce8762e-7e82-4d06-a51e-de3e85d23863
 
-https://github.com/pacman100/DHS-LLM-Workshop/assets/13534540/be64c6f6-632b-401c-bc17-88484abd612e
+
+
