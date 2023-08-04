@@ -13,4 +13,4 @@ pandas
 numpy
 scipy
 matplotlib
-pip install easyllm
+easyllm

@@ -33,6 +33,8 @@ git lfs install
 2. Install flash attention and common requirements
 ```
 MAX_JOBS=8 pip install flash-attn --no-build-isolation
+git clone https://github.com/pacman100/DHS-LLM-Workshop.git
+cd DHS-LLM-Workshop.git
 pip install -r requirements.txt
 ```
 3. Go to [personal_copilot](../personal_copilot/) and install specific requirements
