@@ -30,7 +30,7 @@ Recent advancements in audio technology have led to remarkable performances in v
 
 Below is an example of ASR using Whisper model from OpenAI hosted in 🤗 Spaces.
 
-https://github.com/pacman100/DHS-LLM-Workshop/assets/13534540/e819d7d2-4d3d-412e-ae9c-7dda2059e840
+https://github.com/pacman100/DHS-LLM-Workshop/assets/13534540/b3a6b03f-971a-4908-a93f-0e80e228d78b
 
 Try it out! [Transcribe using Whisper](https://www.huggingface.co/spaces/openai/whisper) 
 
@@ -70,5 +70,7 @@ I leveraged `Llama V2-70B` model to help me with the content for this workshop.
 
 See it in action at [hf.co/chat](https://hf.co/chat/):
 
+https://github.com/pacman100/DHS-LLM-Workshop/assets/13534540/2ce8762e-7e82-4d06-a51e-de3e85d23863
 
-https://github.com/pacman100/DHS-LLM-Workshop/assets/13534540/be64c6f6-632b-401c-bc17-88484abd612e
+
+
