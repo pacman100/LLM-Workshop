@@ -9,3 +9,5 @@ datasets
 einops
 wandb
 tiktoken
+deepspeed
+tqdm

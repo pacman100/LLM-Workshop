@@ -37,7 +37,7 @@ git clone https://github.com/pacman100/DHS-LLM-Workshop.git
 cd DHS-LLM-Workshop.git
 pip install -r requirements.txt
 ```
-3. Go to [personal_copilot](../personal_copilot/) and install specific requirements
+3. Go to [personal_copilot](../personal_copilot/training/) and install specific requirements
 ```
 pip install -r requirements.txt
 ```
