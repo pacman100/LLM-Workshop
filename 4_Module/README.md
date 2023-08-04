@@ -24,11 +24,22 @@ Go to [Dataset Generation](../personal_copilot/dataset_generation/) folder to se
 
 ### Training
 
-1. Go to [personal_copilot](../personal_copilot/) and install requirements
+1. Install git lfs
+```bash
+apt-get update
+apt-get install git-lfs
+git lfs install
+```
+2. Install flash attention and common requirements
+```
+MAX_JOBS=8 pip install flash-attn --no-build-isolation
+pip install -r requirements.txt
+```
+3. Go to [personal_copilot](../personal_copilot/) and install specific requirements
 ```
 pip install -r requirements.txt
 ```
-2. Go to [train.py](../personal_copilot/training/train.py) for the training code using 🤗 Accelerate and 🤗 Transformers Trainer.  
-3. Go to [run_deepspeed.sh](../personal_copilot/training/run_deepspeed.sh) to fully finetune `starcoderbase-3b` model with ZeRO Stage-3 and CPU offloading.
-4. Infere using the trained model in this notebook.
-5. Go to [run_fsdp.sh](../personal_copilot/training/run_fsdp.sh) to fully finetune `starcoderbase-3b` model with FSDP when atleast 4 GPUs are available.
+4. Go to [train.py](../personal_copilot/training/train.py) for the training code using 🤗 Accelerate and 🤗 Transformers Trainer.  
+5. Go to [run_deepspeed.sh](../personal_copilot/training/run_deepspeed.sh) to fully finetune `starcoderbase-3b` model with ZeRO Stage-3 and CPU offloading.
+6. Infere using the trained model in this notebook.
+7. Go to [run_fsdp.sh](../personal_copilot/training/run_fsdp.sh) to fully finetune `starcoderbase-3b` model with FSDP when atleast 4 GPUs are available.
