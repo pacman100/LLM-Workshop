@@ -1,3 +1,7 @@
+"""
+Courtesy: Sayak Paul and Chansung Park.
+"""
+
 import os
 import subprocess
 from multiprocessing import Pool
@@ -26,8 +30,10 @@ def get_repos(username, access_token=None, include_fork=False):
     print(results)
     return results
 
+
 def sort_repos_by_stars(repos):
     return sorted(repos, key=lambda x: x[1], reverse=True)
+
 
 def mirror_repository(repository):
     """Locally clones a repository."""
@@ -49,7 +55,7 @@ def mirror_repositories():
     repositories = get_repos(ORG, os.environ["GH_ACCESS_TOKEN"])
     sorted_repos = sort_repos_by_stars(repositories)
     selected_repos = [x[0] for x in sorted_repos[:TOK_K]]
-    
+
     print(f"Total repositories found: {len(selected_repos)}.")
     print(selected_repos)
     # Mirror repositories using multiprocessing

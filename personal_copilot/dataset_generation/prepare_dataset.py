@@ -1,5 +1,5 @@
 """
-Courtesy: Syak Paul and Chansung Park.
+Courtesy: Sayak Paul and Chansung Park.
 """
 
 import os
