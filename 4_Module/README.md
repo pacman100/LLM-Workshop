@@ -37,9 +37,11 @@ git clone https://github.com/pacman100/DHS-LLM-Workshop.git
 cd DHS-LLM-Workshop.git
 pip install -r requirements.txt
 ```
-3. Go to [personal_copilot](../personal_copilot/training/) and install specific requirements
+3. Go to [personal_copilot](../personal_copilot/training/) and install specific requirements. Also, login into HF hub via `huggingface-cli login`
 ```
 pip install -r requirements.txt
+huggingface-cli login
+wandb login --relogin
 ```
 4. Go to [train.py](../personal_copilot/training/train.py) for the training code using 🤗 Accelerate and 🤗 Transformers Trainer.  
 5. Go to [run_deepspeed.sh](../personal_copilot/training/run_deepspeed.sh) to fully finetune `starcoderbase-3b` model with ZeRO Stage-3 and CPU offloading.

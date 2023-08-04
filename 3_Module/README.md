@@ -55,3 +55,11 @@ Let's go over 2 great blogs explaining this in detail:
 
 1. [Efficient Training on a Single GPU](https://huggingface.co/docs/transformers/perf_train_gpu_one)
 2. [Efficient Training on Multiple GPUs](https://huggingface.co/docs/transformers/perf_train_gpu_many)
+
+## Evaluating LLMs
+
+Let's go over this insightful section on evaluating LLMs by Eugene Yan:
+[Evals: To measure performance](https://eugeneyan.com/writing/llm-patterns/#evals-to-measure-performance)
+
+## Additional Resources
+![Patterns for Building LLM-based Systems & Products](https://eugeneyan.com/writing/llm-patterns/)
