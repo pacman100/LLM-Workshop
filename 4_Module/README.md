@@ -45,5 +45,5 @@ wandb login --relogin
 ```
 4. Go to [train.py](../personal_copilot/training/train.py) for the training code using 🤗 Accelerate and 🤗 Transformers Trainer.  
 5. Go to [run_deepspeed.sh](../personal_copilot/training/run_deepspeed.sh) to fully finetune `starcoderbase-3b` model with ZeRO Stage-3 and CPU offloading.
-6. Infere using the trained model in this notebook.
+6. Infere using the trained model in this notebook [Full Finetuned Personal Co-Pilot](../4_Module/Full%20Finetuned%20Personal%20Co-Pilot.ipynb).
 7. Go to [run_fsdp.sh](../personal_copilot/training/run_fsdp.sh) to fully finetune `starcoderbase-3b` model with FSDP when atleast 4 GPUs are available.
