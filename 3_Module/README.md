@@ -62,4 +62,4 @@ Let's go over this insightful section on evaluating LLMs by Eugene Yan:
 [Evals: To measure performance](https://eugeneyan.com/writing/llm-patterns/#evals-to-measure-performance)
 
 ## Additional Resources
-![Patterns for Building LLM-based Systems & Products](https://eugeneyan.com/writing/llm-patterns/)
+[Patterns for Building LLM-based Systems & Products](https://eugeneyan.com/writing/llm-patterns/)
