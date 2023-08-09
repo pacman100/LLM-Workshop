@@ -12,13 +12,7 @@ from easyllm.clients import huggingface
 
 from agent import get_input_token_length
 
-HF_TOKEN = os.environ.get("HF_TOKEN", None)
-API_TOKEN = os.environ.get("API_TOKEN", None)
-ENDPOINT = os.environ.get("ENDPOINT", None)
-DEFAULT_SYSTEM_PROMPT = """\
-You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.  Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. Please ensure that your responses are socially unbiased and positive in nature.
-If a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don't know the answer to a question, please don't share false information.\
-"""
+os.environ["HUGGINGFACE_PROMPT"] = "llama2"
 MAX_MAX_NEW_TOKENS = 2048
 DEFAULT_MAX_NEW_TOKENS = 1024
 MAX_INPUT_TOKEN_LENGTH = 4000
@@ -35,10 +29,6 @@ print("CPU threads:", torch.get_num_threads())
 
 biencoder = SentenceTransformer("intfloat/e5-large-v2", device=torch_device)
 cross_encoder = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-12-v2", max_length=512, device=torch_device)
-
-# helper to build llama2 prompt
-huggingface.prompt_builder = "llama2"
-huggingface.api_key = API_TOKEN
 
 
 def create_qa_prompt(query, relevant_chunks):
