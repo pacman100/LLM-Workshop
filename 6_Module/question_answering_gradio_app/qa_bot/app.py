@@ -1,5 +1,6 @@
 import argparse
 import os
+import json
 from sentence_transformers import SentenceTransformer, CrossEncoder
 import hnswlib
 from typing import Iterator
@@ -13,6 +14,7 @@ from easyllm.clients import huggingface
 from agent import get_input_token_length
 
 huggingface.prompt_builder = "llama2"
+huggingface.api_key = os.environ["HUGGINGFACE_TOKEN"]
 MAX_MAX_NEW_TOKENS = 2048
 DEFAULT_MAX_NEW_TOKENS = 1024
 MAX_INPUT_TOKEN_LENGTH = 4000
@@ -47,12 +49,13 @@ Helpful Answer: \
 def create_condense_question_prompt(question, chat_history):
     return f"""\
 Given the following conversation and a follow up question, \
-rephrase the follow up question to be a standalone question, in its original language.
+rephrase the follow up question to be a standalone question in its original language. \
+Output the json object with single field `question` and value being the rephrased standalone question. 
+Only output json object and nothing else.
 
 Chat History:
 {chat_history}
 Follow Up Input: {question}
-Standalone question: \
 """
 
 
@@ -68,11 +71,12 @@ def get_completion(
     stream=False,
     debug=False,
 ):
+    if temperature < 1e-2:
+        temperature = 1e-2
     messages = []
     if system_prompt is not None:
         messages.append({"role": "system", "content": system_prompt})
     messages.append({"role": "user", "content": prompt})
-    print(messages)
     response = huggingface.ChatCompletion.create(
         model=model,
         messages=messages,
@@ -129,8 +133,8 @@ def generate_condensed_query(query, history):
         chat_history += f"Assistant: {turn[1]}\n"
 
     condense_question_prompt = create_condense_question_prompt(query, chat_history)
-    condensed_question = get_completion(condense_question_prompt, max_new_tokens=64, temperature=0)
-    return condensed_question
+    condensed_question = json.loads(get_completion(condense_question_prompt, max_new_tokens=64, temperature=0))
+    return condensed_question["question"]
 
 
 DEFAULT_SYSTEM_PROMPT = """\
@@ -187,8 +191,9 @@ def generate(
     if max_new_tokens > MAX_MAX_NEW_TOKENS:
         raise ValueError
     history = history_with_input[:-1]
-    condensed_query = generate_condensed_query(message, history)
-    print(f"{condensed_query=}")
+    if len(history) > 0:
+        condensed_query = generate_condensed_query(message, history)
+        print(f"{condensed_query=}")
     query_embedding = create_query_embedding(condensed_query)
     relevant_chunks = find_nearest_neighbors(query_embedding)
     reranked_relevant_chunks = rerank_chunks_with_cross_encoder(condensed_query, relevant_chunks)
