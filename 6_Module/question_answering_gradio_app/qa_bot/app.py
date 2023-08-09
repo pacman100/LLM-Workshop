@@ -211,12 +211,12 @@ def generate(
         top_p=top_p,
     )
     try:
-        first_response = next(generator)
+        first_response = next(generator)["choices"][0]["delta"].get("content", "")
         yield history + [(message, first_response)]
     except StopIteration:
         yield history + [(message, "")]
     for response in generator:
-        yield history + [(message, response)]
+        yield history + [(message, response["choices"][0]["delta"].get("content", ""))]
 
 
 # def generate(
