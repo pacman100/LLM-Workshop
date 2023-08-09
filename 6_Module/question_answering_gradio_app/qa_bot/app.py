@@ -72,6 +72,7 @@ def get_completion(
     if system_prompt is not None:
         messages.append({"role": "system", "content": system_prompt})
     messages.append({"role": "user", "content": prompt})
+    print(messages)
     response = huggingface.ChatCompletion.create(
         model=model,
         messages=messages,
@@ -128,7 +129,7 @@ def generate_condensed_query(query, history):
         chat_history += f"Assistant: {turn[1]}\n"
 
     condense_question_prompt = create_condense_question_prompt(query, chat_history)
-    condensed_question = get_completion(condense_question_prompt, max_new_tokens=64, temperature=0, stream=False)
+    condensed_question = get_completion(condense_question_prompt, max_new_tokens=64, temperature=0)
     return condensed_question
 
 
