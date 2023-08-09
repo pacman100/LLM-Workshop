@@ -37,6 +37,10 @@ def main():
     # Get the embeddings for the text chunks
     embeddings = get_sentence_embeddings(model, df["chunk_content"].tolist())
 
+    # save embeddings as numpy array
+    # save the array to a file
+    np.save("embeddings.npy", embeddings)
+
     # Create the HNSW index
     index = create_hnsw_index(embeddings)
 

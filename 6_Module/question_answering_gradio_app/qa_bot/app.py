@@ -3,6 +3,7 @@ import json
 import re
 from sentence_transformers import SentenceTransformer, CrossEncoder
 import hnswlib
+import numpy as np
 from typing import Iterator
 
 import gradio as gr
@@ -21,6 +22,7 @@ EMBED_DIM = 1024
 K = 10
 EF = 100
 SEARCH_INDEX = "search_index.bin"
+EMBEDDINGS_FILE = "embeddings.npy"
 DOCUMENT_DATASET = "chunked_data.parquet"
 COSINE_THRESHOLD = 0.7
 
@@ -116,6 +118,19 @@ def load_hnsw_index(index_file):
     # Load the HNSW index from the specified file
     index = hnswlib.Index(space="ip", dim=EMBED_DIM)
     index.load_index(index_file)
+    return index
+
+
+# create the index for the PEFT docs from numpy embeddings
+# avoid the arch mismatches when creating search index
+def create_hnsw_index(embeddings_file, M=16, efC=100):
+    embeddings = np.load(embeddings_file)
+    # Create the HNSW index
+    num_dim = embeddings.shape[1]
+    ids = np.arange(embeddings.shape[0])
+    index = hnswlib.Index(space="ip", dim=num_dim)
+    index.init_index(max_elements=embeddings.shape[0], ef_construction=efC, M=M)
+    index.add_items(embeddings, ids)
     return index
 
 
@@ -274,7 +289,7 @@ def check_input_token_length(message: str, chat_history: list[tuple[str, str]], 
         )
 
 
-search_index = load_hnsw_index(SEARCH_INDEX)
+search_index = create_hnsw_index(EMBEDDINGS_FILE)  # load_hnsw_index(SEARCH_INDEX)
 data_df = pd.read_parquet(DOCUMENT_DATASET).reset_index()
 with gr.Blocks(css="style.css") as demo:
     gr.Markdown(DESCRIPTION)
