@@ -223,7 +223,7 @@ def generate(
 
     output = ""
     for idx, response in enumerate(generator):
-        token = response["choices"][0]["delta"].get("content", "")
+        token = response["choices"][0]["delta"].get("content", "") or ""
         output += token
         if idx == 0:
             history.append((message, output))
