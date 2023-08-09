@@ -228,7 +228,7 @@ def generate(
         if idx == 0:
             history.append((message, output))
         else:
-            history[-1][1] = output
+            history[-1] = (message, output)
 
         history = [
             (wrap_html_code(history[i][0].strip()), wrap_html_code(history[i][1].strip()))
