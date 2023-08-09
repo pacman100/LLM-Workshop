@@ -10,7 +10,7 @@ import torch
 
 from easyllm.clients import huggingface
 
-from agent import get_input_token_length, run
+from agent import get_input_token_length
 
 HF_TOKEN = os.environ.get("HF_TOKEN", None)
 API_TOKEN = os.environ.get("API_TOKEN", None)
@@ -195,7 +195,7 @@ def generate(
 ) -> Iterator[list[tuple[str, str]]]:
     if max_new_tokens > MAX_MAX_NEW_TOKENS:
         raise ValueError
-
+    history = history_with_input[:-1]
     condensed_query = generate_condensed_query(message, history)
     print(f"{condensed_query=}")
     query_embedding = create_query_embedding(condensed_query)
@@ -203,7 +203,6 @@ def generate(
     reranked_relevant_chunks = rerank_chunks_with_cross_encoder(condensed_query, relevant_chunks)
     qa_prompt = create_qa_prompt(condensed_query, reranked_relevant_chunks)
     print(f"{qa_prompt=}")
-    history = history_with_input[:-1]
     generator = get_completion(
         qa_prompt,
         system_prompt=system_prompt,
