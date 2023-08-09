@@ -160,7 +160,7 @@ this demo is governed by the original [license](https://huggingface.co/spaces/hu
 """
 
 if not torch.cuda.is_available():
-    DESCRIPTION += "\n<p>Running on CPU 🥶 This demo does not work on CPU.</p>"
+    DESCRIPTION += "\n<p>Running on CPU 🥶.</p>"
 
 
 def clear_and_save_textbox(message: str) -> tuple[str, str]:
