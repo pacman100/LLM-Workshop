@@ -8,6 +8,8 @@ import gradio as gr
 import pandas as pd
 import torch
 
+from easyllm.clients import huggingface
+
 from agent import get_input_token_length, run
 
 HF_TOKEN = os.environ.get("HF_TOKEN", None)
@@ -25,6 +27,7 @@ K = 10
 EF = 100
 SEARCH_INDEX = "search_index.bin"
 DOCUMENT_DATASET = "chunked_data.parquet"
+COSINE_THRESHOLD = 0.7
 
 torch_device = "cuda" if torch.cuda.is_available() else "cpu"
 print("Running on device:", torch_device)
@@ -32,6 +35,65 @@ print("CPU threads:", torch.get_num_threads())
 
 biencoder = SentenceTransformer("intfloat/e5-large-v2", device=torch_device)
 cross_encoder = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-12-v2", max_length=512, device=torch_device)
+
+# helper to build llama2 prompt
+huggingface.prompt_builder = "llama2"
+huggingface.api_key = API_TOKEN
+
+
+def create_qa_prompt(query, relevant_chunks):
+    stuffed_context = " ".join(relevant_chunks)
+    return f"""\
+Use the following pieces of context given in to answer the question at the end. \
+If you don't know the answer, just say that you don't know, don't try to make up an answer. \
+Keep the answer short and succinct.
+        
+Context: {stuffed_context}
+Question: {query}
+Helpful Answer: \
+"""
+
+
+def create_condense_question_prompt(question, chat_history):
+    return f"""\
+Given the following conversation and a follow up question, \
+rephrase the follow up question to be a standalone question, in its original language.
+
+Chat History:
+{chat_history}
+Follow Up Input: {question}
+Standalone question: \
+"""
+
+
+# https://www.philschmid.de/llama-2#how-to-prompt-llama-2-chat
+def get_completion(
+    prompt,
+    system_prompt=None,
+    model="meta-llama/Llama-2-70b-chat-hf",
+    max_new_tokens=1024,
+    temperature=0.2,
+    top_p=0.95,
+    top_k=50,
+    stream=False,
+    debug=False,
+):
+    messages = []
+    if system_prompt is not None:
+        messages.append({"role": "system", "content": system_prompt})
+    messages.append({"role": "user", "content": prompt})
+    response = huggingface.ChatCompletion.create(
+        model=model,
+        messages=messages,
+        temperature=temperature,  # this is the degree of randomness of the model's output
+        max_tokens=max_new_tokens,  # this is the number of new tokens being generated
+        top_p=top_p,
+        top_k=top_k,
+        stream=stream,
+        debug=debug,
+    )
+    return response["choices"][0]["message"]["content"] if not stream else response
+
 
 # load the index for the PEFT docs
 def load_hnsw_index(index_file):
@@ -50,7 +112,8 @@ def create_query_embedding(query):
 def find_nearest_neighbors(query_embedding):
     search_index.set_ef(EF)
     # Find the k-nearest neighbors for the query embedding
-    labels, _ = search_index.knn_query(query_embedding, k=K)
+    labels, distances = search_index.knn_query(query_embedding, k=K)
+    labels = [label for label, distance in zip(labels, distances) if (1 - distance) >= COSINE_THRESHOLD]
     relevant_chunks = data_df.iloc[labels[0]]["chunk_content"].tolist()
     return relevant_chunks
 
@@ -68,17 +131,15 @@ def rerank_chunks_with_cross_encoder(query, chunks):
     return sorted_chunks
 
 
-def create_qa_prompt(query, relevant_chunks):
-    stuffed_context = " ".join(relevant_chunks)
-    return f"""\
-Use the following pieces of context given in to answer the question at the end. \
-If you don't know the answer, just say that you don't know, don't try to make up an answer. \
-Keep the answer short and succinct.
-        
-Context:<{stuffed_context}
-Question:<{query}>
-Helpful Answer:\
-"""
+def generate_condensed_query(query, history):
+    chat_history = ""
+    for turn in history:
+        chat_history += f"Human: {turn[0]}\n"
+        chat_history += f"Assistant: {turn[1]}\n"
+
+    condense_question_prompt = create_condense_question_prompt(query, chat_history)
+    condensed_question = get_completion(condense_question_prompt, max_new_tokens=64, temperature=0, stream=False)
+    return condensed_question
 
 
 DEFAULT_SYSTEM_PROMPT = """\
@@ -135,14 +196,23 @@ def generate(
     if max_new_tokens > MAX_MAX_NEW_TOKENS:
         raise ValueError
 
-    query_embedding = create_query_embedding(message)
+    condensed_query = generate_condensed_query(message, history)
+    print(f"{condensed_query=}")
+    query_embedding = create_query_embedding(condensed_query)
     relevant_chunks = find_nearest_neighbors(query_embedding)
-    reranked_relevant_chunks = rerank_chunks_with_cross_encoder(message, relevant_chunks)
-    qa_prompt = create_qa_prompt(message, reranked_relevant_chunks)
+    reranked_relevant_chunks = rerank_chunks_with_cross_encoder(condensed_query, relevant_chunks)
+    qa_prompt = create_qa_prompt(condensed_query, reranked_relevant_chunks)
     print(f"{qa_prompt=}")
-
     history = history_with_input[:-1]
-    generator = run(qa_prompt, history, system_prompt, max_new_tokens, temperature, top_p, top_k)
+    generator = get_completion(
+        qa_prompt,
+        system_prompt=system_prompt,
+        stream=True,
+        max_new_tokens=max_new_tokens,
+        temperature=temperature,
+        top_k=top_k,
+        top_p=top_p,
+    )
     try:
         first_response = next(generator)
         yield history + [(message, first_response)]
@@ -150,6 +220,35 @@ def generate(
         yield history + [(message, "")]
     for response in generator:
         yield history + [(message, response)]
+
+
+# def generate(
+#     message: str,
+#     history_with_input: list[tuple[str, str]],
+#     system_prompt: str,
+#     max_new_tokens: int,
+#     temperature: float,
+#     top_p: float,
+#     top_k: int,
+# ) -> Iterator[list[tuple[str, str]]]:
+#     if max_new_tokens > MAX_MAX_NEW_TOKENS:
+#         raise ValueError
+
+#     query_embedding = create_query_embedding(message)
+#     relevant_chunks = find_nearest_neighbors(query_embedding)
+#     reranked_relevant_chunks = rerank_chunks_with_cross_encoder(message, relevant_chunks)
+#     qa_prompt = create_qa_prompt(message, reranked_relevant_chunks)
+#     print(f"{qa_prompt=}")
+
+#     history = history_with_input[:-1]
+#     generator = run(qa_prompt, history, system_prompt, max_new_tokens, temperature, top_p, top_k)
+#     try:
+#         first_response = next(generator)
+#         yield history + [(message, first_response)]
+#     except StopIteration:
+#         yield history + [(message, "")]
+#     for response in generator:
+#         yield history + [(message, response)]
 
 
 def process_example(message: str) -> tuple[str, list[tuple[str, str]]]:
