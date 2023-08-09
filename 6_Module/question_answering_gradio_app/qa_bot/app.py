@@ -108,8 +108,8 @@ def find_nearest_neighbors(query_embedding):
     search_index.set_ef(EF)
     # Find the k-nearest neighbors for the query embedding
     labels, distances = search_index.knn_query(query_embedding, k=K)
-    labels = [label for label, distance in zip(labels, distances) if (1 - distance) >= COSINE_THRESHOLD]
-    relevant_chunks = data_df.iloc[labels[0]]["chunk_content"].tolist()
+    labels = [label for label, distance in zip(labels[0], distances[0]) if (1 - distance) >= COSINE_THRESHOLD]
+    relevant_chunks = data_df.iloc[labels]["chunk_content"].tolist()
     return relevant_chunks
 
 
