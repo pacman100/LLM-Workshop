@@ -1,16 +1,11 @@
+import os
 from threading import Thread
 from typing import Iterator
 
-import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
+from transformers import AutoTokenizer, TextIteratorStreamer
 
 model_id = "meta-llama/Llama-2-7b-chat-hf"
-
-if torch.cuda.is_available():
-    model = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=torch.float16, device_map="auto")
-else:
-    model = None
-tokenizer = AutoTokenizer.from_pretrained(model_id)
+tokenizer = AutoTokenizer.from_pretrained(model_id, use_auth_token=os.environ["HUGGINGFACE_TOKEN"])
 
 
 def get_prompt(message: str, chat_history: list[tuple[str, str]], system_prompt: str) -> str:

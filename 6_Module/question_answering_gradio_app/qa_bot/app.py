@@ -155,8 +155,8 @@ LICENSE = """
 <p/>
 
 ---
-As a derivate work of [Llama-2-7b-chat](https://huggingface.co/meta-llama/Llama-2-7b-chat) by Meta,
-this demo is governed by the original [license](https://huggingface.co/spaces/huggingface-projects/llama-2-7b-chat/blob/main/LICENSE.txt) and [acceptable use policy](https://huggingface.co/spaces/huggingface-projects/llama-2-7b-chat/blob/main/USE_POLICY.md).
+As a derivate work of [Llama-2-70b-chat](https://huggingface.co/meta-llama/Llama-2-70b-chat) by Meta,
+this demo is governed by the original [license](https://huggingface.co/spaces/huggingface-projects/llama-2-70b-chat/blob/main/LICENSE.txt) and [acceptable use policy](https://huggingface.co/spaces/huggingface-projects/llama-2-70b-chat/blob/main/USE_POLICY.md).
 """
 
 if not torch.cuda.is_available():
@@ -239,35 +239,6 @@ def generate(
     return history
 
 
-# def generate(
-#     message: str,
-#     history_with_input: list[tuple[str, str]],
-#     system_prompt: str,
-#     max_new_tokens: int,
-#     temperature: float,
-#     top_p: float,
-#     top_k: int,
-# ) -> Iterator[list[tuple[str, str]]]:
-#     if max_new_tokens > MAX_MAX_NEW_TOKENS:
-#         raise ValueError
-
-#     query_embedding = create_query_embedding(message)
-#     relevant_chunks = find_nearest_neighbors(query_embedding)
-#     reranked_relevant_chunks = rerank_chunks_with_cross_encoder(message, relevant_chunks)
-#     qa_prompt = create_qa_prompt(message, reranked_relevant_chunks)
-#     print(f"{qa_prompt=}")
-
-#     history = history_with_input[:-1]
-#     generator = run(qa_prompt, history, system_prompt, max_new_tokens, temperature, top_p, top_k)
-#     try:
-#         first_response = next(generator)
-#         yield history + [(message, first_response)]
-#     except StopIteration:
-#         yield history + [(message, "")]
-#     for response in generator:
-#         yield history + [(message, response)]
-
-
 def process_example(message: str) -> tuple[str, list[tuple[str, str]]]:
     generator = generate(message, [], DEFAULT_SYSTEM_PROMPT, 1024, 0.2, 0.95, 50)
     for x in generator:
@@ -287,7 +258,6 @@ search_index = load_hnsw_index(SEARCH_INDEX)
 data_df = pd.read_parquet(DOCUMENT_DATASET).reset_index()
 with gr.Blocks(css="style.css") as demo:
     gr.Markdown(DESCRIPTION)
-    gr.DuplicateButton(value="Duplicate Space for private use", elem_id="duplicate-button")
 
     with gr.Group():
         chatbot = gr.Chatbot(label="Chatbot")
