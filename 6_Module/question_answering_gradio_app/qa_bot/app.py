@@ -12,7 +12,7 @@ from easyllm.clients import huggingface
 
 from agent import get_input_token_length
 
-os.environ["HUGGINGFACE_PROMPT"] = "llama2"
+huggingface.prompt_builder = "llama2"
 MAX_MAX_NEW_TOKENS = 2048
 DEFAULT_MAX_NEW_TOKENS = 1024
 MAX_INPUT_TOKEN_LENGTH = 4000
