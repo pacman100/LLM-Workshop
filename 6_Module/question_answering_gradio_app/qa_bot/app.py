@@ -1,4 +1,3 @@
-import argparse
 import os
 import json
 import re
@@ -11,8 +10,7 @@ import pandas as pd
 import torch
 
 from easyllm.clients import huggingface
-
-from agent import get_input_token_length
+from transformers import AutoTokenizer
 
 huggingface.prompt_builder = "llama2"
 huggingface.api_key = os.environ["HUGGINGFACE_TOKEN"]
@@ -30,8 +28,11 @@ torch_device = "cuda" if torch.cuda.is_available() else "cpu"
 print("Running on device:", torch_device)
 print("CPU threads:", torch.get_num_threads())
 
+model_id = "meta-llama/Llama-2-70b-chat-hf"
 biencoder = SentenceTransformer("intfloat/e5-large-v2", device=torch_device)
 cross_encoder = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-12-v2", max_length=512, device=torch_device)
+
+tokenizer = AutoTokenizer.from_pretrained(model_id, use_auth_token=os.environ["HUGGINGFACE_TOKEN"])
 
 
 def create_qa_prompt(query, relevant_chunks):
@@ -60,11 +61,30 @@ Follow Up Input: {question}
 """
 
 
+def get_prompt(message: str, chat_history: list[tuple[str, str]], system_prompt: str) -> str:
+    texts = [f"<s>[INST] <<SYS>>\n{system_prompt}\n<</SYS>>\n\n"]
+    # The first user input is _not_ stripped
+    do_strip = False
+    for user_input, response in chat_history:
+        user_input = user_input.strip() if do_strip else user_input
+        do_strip = True
+        texts.append(f"{user_input} [/INST] {response.strip()} </s><s>[INST] ")
+    message = message.strip() if do_strip else message
+    texts.append(f"{message} [/INST]")
+    return "".join(texts)
+
+
+def get_input_token_length(message: str, chat_history: list[tuple[str, str]], system_prompt: str) -> int:
+    prompt = get_prompt(message, chat_history, system_prompt)
+    input_ids = tokenizer([prompt], return_tensors="np", add_special_tokens=False)["input_ids"]
+    return input_ids.shape[-1]
+
+
 # https://www.philschmid.de/llama-2#how-to-prompt-llama-2-chat
 def get_completion(
     prompt,
     system_prompt=None,
-    model="meta-llama/Llama-2-70b-chat-hf",
+    model=model_id,
     max_new_tokens=1024,
     temperature=0.2,
     top_p=0.95,
@@ -429,14 +449,3 @@ with gr.Blocks(css="style.css") as demo:
     )
 
 demo.queue(max_size=20).launch(debug=True, share=True)
-
-
-# if __name__ == "__main__":
-#     parser = argparse.ArgumentParser(description="Script to create and use an HNSW index for similarity search.")
-#     parser.add_argument("--input_file", help="Input file containing text chunks in a Parquet format")
-#     parser.add_argument("--index_file", help="HNSW index file with .bin extension")
-#     args = parser.parse_args()
-
-#     data_df = pd.read_parquet(args.input_file).reset_index()
-#     search_index = load_hnsw_index(args.index_file)
-#     main()
