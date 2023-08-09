@@ -194,6 +194,8 @@ def generate(
     if len(history) > 0:
         condensed_query = generate_condensed_query(message, history)
         print(f"{condensed_query=}")
+    else:
+        condensed_query = message
     query_embedding = create_query_embedding(condensed_query)
     relevant_chunks = find_nearest_neighbors(query_embedding)
     reranked_relevant_chunks = rerank_chunks_with_cross_encoder(condensed_query, relevant_chunks)
