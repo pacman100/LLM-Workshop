@@ -1,6 +1,7 @@
 import argparse
 import os
 import json
+import re
 from sentence_transformers import SentenceTransformer, CrossEncoder
 import hnswlib
 from typing import Iterator
@@ -179,6 +180,15 @@ def delete_prev_fn(history: list[tuple[str, str]]) -> tuple[list[tuple[str, str]
     return history, message or ""
 
 
+def wrap_html_code(text):
+    pattern = r"<.*?>"
+    matches = re.findall(pattern, text)
+    if len(matches) > 0:
+        return f"```{text}```"
+    else:
+        return text
+
+
 def generate(
     message: str,
     history_with_input: list[tuple[str, str]],
@@ -210,13 +220,23 @@ def generate(
         top_k=top_k,
         top_p=top_p,
     )
-    try:
-        first_response = next(generator)["choices"][0]["delta"].get("content", "")
-        yield history + [(message, first_response)]
-    except StopIteration:
-        yield history + [(message, "")]
-    for response in generator:
-        yield history + [(message, response["choices"][0]["delta"].get("content", ""))]
+
+    output = ""
+    for idx, response in enumerate(generator):
+        token = response["choices"][0]["delta"].get("content", "")
+        output += token
+        if idx == 0:
+            history.append((message, output))
+        else:
+            history[-1][1] = output
+
+        history = [
+            (wrap_html_code(history[i][0].strip()), wrap_html_code(history[i][1].strip()))
+            for i in range(0, len(history))
+        ]
+        yield history
+
+    return history
 
 
 # def generate(
