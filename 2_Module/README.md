@@ -2,7 +2,7 @@
 
 > "You shall know a word by the company it keeps" - Linguist John Rupert Firth
 
-Natural Language Processing (NLP) domain is currently the centre stage of monumental breakthroughs even though the research has been going on for half a decade now. Now is the best time to get started in the world of Machine Learning (ML)/Deep Learning (DL)/Artifical Intgelligence (AI) as it is akin to **Software 2.0** wherein more and more businesses, instituations and humanity as whole will increasingly use and interact with AI.
+Natural Language Processing (NLP) domain is currently the centre stage of monumental breakthroughs even though the research has been going on for half a century now. Now is the best time to get started in the world of Machine Learning (ML)/Deep Learning (DL)/Artifical Intgelligence (AI) as it is akin to **Software 2.0** wherein more and more businesses, instituations and humanity as whole will increasingly use and interact with AI.
 
 **How to represent  and sentences of a language in a way Computer can make sense of it?**
 

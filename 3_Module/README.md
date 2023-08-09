@@ -12,7 +12,7 @@ Research Paper: [Scaling Laws for Neural Language Models](https://arxiv.org/pdf/
 Let's put some numbers with Llama V2 70B model example:
 
 1. If we have a mobel with 70B params trained on 2T tokens, the approx compute required is: 6 \* 7e10 * 2e12  = **8.4e23 FLOPs**. 
-2. A100s GPUs perform ~ 2.8e13 FLOPs (in float32 or bfloat16). Hoever, the most performant implementation manages to have 50% of peak performance due to GPU memory limits and distributed communication constraints, i.e., reasonable Model Flops Utilization (MFU) being **~1.4e13 FLOPs**.
+2. A100s GPUs perform ~ 3.12e14 FLOPs (in float32 or bfloat16). Hoever, the most performant implementation manages to have 50% of peak performance due to GPU memory limits and distributed communication constraints, i.e., reasonable Model Flops Utilization (MFU) being **~1.5e14 FLOPs**.
 3. Number of hours required = 8.4e23/(1.5e14\*3600) = 8.4e23/5.4e17 = **1.55e6 A100 hours**
 4. **Note:** Above estimate doesn't consider hyperparamter runs, failure of nodes and restarts. There will be hyperparameter runs on smaller scales and numerous failures and restarts from checkpoints. Paper reports **1.72e6 A100 GPU hours**. This is ~10% more than our estimated GPU hours.
 4. Approx cost of training = 1.72e6 \* ($1.8/hr) ~ **$3M** 
