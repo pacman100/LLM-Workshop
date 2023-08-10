@@ -140,6 +140,10 @@ class ScriptArguments:
         default=False,
         metadata={"help": "Enables loading model in 4bit."},
     )
+    use_gradient_checkpointing: Optional[bool] = field(
+        default=False,
+        metadata={"help": "Enables Gradient Checkpointing."},
+    )
     dataset_text_field: str = field(default="text", metadata={"help": "Dataset field to use as input text."})
 
 
@@ -183,7 +187,7 @@ def create_and_prepare_model(args):
         load_in_8bit=load_in_8bit,
         quantization_config=bnb_config,
         device_map=device_map,
-        use_cache=False,
+        use_cache=not args.use_gradient_checkpointing,
         trust_remote_code=True,
     )
 
@@ -220,6 +224,7 @@ training_arguments = TrainingArguments(
     save_strategy="epoch",
     evaluation_strategy="epoch",
     push_to_hub=True,
+    gradient_checkpointing=script_args.use_gradient_checkpointing,
 )
 
 model, peft_config, tokenizer = create_and_prepare_model(script_args)
@@ -239,6 +244,8 @@ trainer = SFTTrainer(
     args=training_arguments,
     packing=script_args.packing,
 )
+
+print(f"{trainer.model}")
 
 if script_args.use_peft_lora:
     for name, module in trainer.model.named_modules():
