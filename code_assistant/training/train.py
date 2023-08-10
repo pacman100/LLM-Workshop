@@ -138,8 +138,10 @@ script_args = parser.parse_args_into_dataclasses()[0]
 def create_and_prepare_model(args):
     if args.use_flash_attn:
         from starcoder_flash_attn_monkey_patch import replace_starcoder_attn_with_flash_attn
+        from llama_flash_attn_monkey_patch import replace_llama_attn_with_flash_attn
 
         replace_starcoder_attn_with_flash_attn()
+        replace_llama_attn_with_flash_attn()
     compute_dtype = getattr(torch, args.bnb_4bit_compute_dtype)
 
     bnb_config = BitsAndBytesConfig(
