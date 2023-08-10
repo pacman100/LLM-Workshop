@@ -128,6 +128,18 @@ class ScriptArguments:
         default=False,
         metadata={"help": "Enables Flash attention for training."},
     )
+    use_peft_lora: Optional[bool] = field(
+        default=False,
+        metadata={"help": "Enables PEFT LoRA for training."},
+    )
+    use_8bit_qunatization: Optional[bool] = field(
+        default=False,
+        metadata={"help": "Enables loading model in 8bit."},
+    )
+    use_4bit_qunatization: Optional[bool] = field(
+        default=False,
+        metadata={"help": "Enables loading model in 4bit."},
+    )
     dataset_text_field: str = field(default="text", metadata={"help": "Dataset field to use as input text."})
 
 
@@ -142,36 +154,49 @@ def create_and_prepare_model(args):
 
         replace_starcoder_attn_with_flash_attn()
         replace_llama_attn_with_flash_attn()
-    compute_dtype = getattr(torch, args.bnb_4bit_compute_dtype)
+    device_map = None
+    bnb_config = None
+    load_in_8bit = args.use_8bit_qunatization
 
-    bnb_config = BitsAndBytesConfig(
-        load_in_4bit=args.use_4bit,
-        bnb_4bit_quant_type=args.bnb_4bit_quant_type,
-        bnb_4bit_compute_dtype=compute_dtype,
-        bnb_4bit_use_double_quant=args.use_nested_quant,
-    )
+    if args.use_4bit_qunatization:
+        compute_dtype = getattr(torch, args.bnb_4bit_compute_dtype)
 
-    if compute_dtype == torch.float16 and args.use_4bit:
-        major, _ = torch.cuda.get_device_capability()
-        if major >= 8:
-            print("=" * 80)
-            print("Your GPU supports bfloat16, you can accelerate training with the argument --bf16")
-            print("=" * 80)
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit=args.use_4bit_qunatization,
+            bnb_4bit_quant_type=args.bnb_4bit_quant_type,
+            bnb_4bit_compute_dtype=compute_dtype,
+            bnb_4bit_use_double_quant=args.use_nested_quant,
+        )
 
-    device_map = {"": 0}
+        if compute_dtype == torch.float16 and args.use_4bit_qunatization:
+            major, _ = torch.cuda.get_device_capability()
+            if major >= 8:
+                print("=" * 80)
+                print("Your GPU supports bfloat16, you can accelerate training with the argument --bf16")
+                print("=" * 80)
+
+    if args.use_4bit_qunatization or args.use_8bit_qunatization:
+        device_map = {"": 0}
 
     model = AutoModelForCausalLM.from_pretrained(
-        args.model_name, quantization_config=bnb_config, device_map=device_map, trust_remote_code=True
+        args.model_path,
+        load_in_8bit=load_in_8bit,
+        quantization_config=bnb_config,
+        device_map=device_map,
+        use_cache=not args.no_gradient_checkpointing,
+        trust_remote_code=True,
     )
 
-    peft_config = LoraConfig(
-        lora_alpha=script_args.lora_alpha,
-        lora_dropout=script_args.lora_dropout,
-        r=script_args.lora_r,
-        bias="none",
-        task_type="CAUSAL_LM",
-        target_modules=script_args.lora_target_modules.split(","),
-    )
+    peft_config = None
+    if args.use_peft_lora:
+        peft_config = LoraConfig(
+            lora_alpha=script_args.lora_alpha,
+            lora_dropout=script_args.lora_dropout,
+            r=script_args.lora_r,
+            bias="none",
+            task_type="CAUSAL_LM",
+            target_modules=script_args.lora_target_modules.split(","),
+        )
 
     tokenizer = AutoTokenizer.from_pretrained(script_args.model_name, trust_remote_code=True)
     tokenizer.pad_token = tokenizer.eos_token
@@ -215,18 +240,19 @@ trainer = SFTTrainer(
     packing=script_args.packing,
 )
 
-
-for name, module in trainer.model.named_modules():
-    if isinstance(module, LoraLayer):
-        if script_args.bf16:
-            module = module.to(torch.bfloat16)
-    if "norm" in name:
-        module = module.to(torch.float32)
-    if any(x in name for x in ["lm_head", "embed_tokens", "wte", "wpe"]):
-        if hasattr(module, "weight"):
-            if script_args.bf16 and module.weight.dtype == torch.float32:
+if script_args.use_peft_lora:
+    for name, module in trainer.model.named_modules():
+        if isinstance(module, LoraLayer):
+            if script_args.bf16:
                 module = module.to(torch.bfloat16)
+        if "norm" in name:
+            module = module.to(torch.float32)
+        if any(x in name for x in ["lm_head", "embed_tokens", "wte", "wpe"]):
+            if hasattr(module, "weight"):
+                if script_args.bf16 and module.weight.dtype == torch.float32:
+                    module = module.to(torch.bfloat16)
 
 trainer.train()
 trainer.push_to_hub()
-trainer.model.push_to_hub(trainer.repo.local_dir)
+if script_args.use_peft_lora:
+    trainer.model.push_to_hub(script_args.output_dir)
