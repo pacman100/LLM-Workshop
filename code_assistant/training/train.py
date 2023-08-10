@@ -56,7 +56,7 @@ class ScriptArguments:
     gradient_accumulation_steps: Optional[int] = field(default=4)
     learning_rate: Optional[float] = field(default=2e-4)
     max_grad_norm: Optional[float] = field(default=0.3)
-    weight_decay: Optional[int] = field(default=0.001)
+    weight_decay: Optional[float] = field(default=0.001)
     lora_alpha: Optional[int] = field(default=16)
     lora_dropout: Optional[float] = field(default=0.1)
     lora_r: Optional[int] = field(default=64)
