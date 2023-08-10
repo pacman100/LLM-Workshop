@@ -179,7 +179,7 @@ def create_and_prepare_model(args):
         device_map = {"": 0}
 
     model = AutoModelForCausalLM.from_pretrained(
-        args.model_path,
+        args.model_name,
         load_in_8bit=load_in_8bit,
         quantization_config=bnb_config,
         device_map=device_map,
