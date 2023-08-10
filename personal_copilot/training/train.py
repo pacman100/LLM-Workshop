@@ -348,7 +348,7 @@ def run_training(args, train_data, val_data):
     model.save_pretrained(os.path.join(args.output_dir, "final_checkpoint/"))
     trainer.push_to_hub()
     if args.use_peft_lora:
-        trainer.model.push_to_hub(trainer.repo.local_dir)
+        trainer.model.push_to_hub(args.output_dir)
 
 
 def main(args):
