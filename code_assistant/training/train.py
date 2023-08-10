@@ -183,7 +183,7 @@ def create_and_prepare_model(args):
         load_in_8bit=load_in_8bit,
         quantization_config=bnb_config,
         device_map=device_map,
-        use_cache=not args.no_gradient_checkpointing,
+        use_cache=False,
         trust_remote_code=True,
     )
 
