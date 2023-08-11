@@ -260,6 +260,8 @@ if script_args.use_peft_lora:
                     module = module.to(torch.bfloat16)
 
 trainer.train()
+if trainer.is_fsdp_enabled:
+    trainer.accelerator.state.fsdp_plugin.set_state_dict_type("FULL_STATE_DICT")
 trainer.push_to_hub()
 if script_args.use_peft_lora:
     trainer.model.push_to_hub(script_args.output_dir)
