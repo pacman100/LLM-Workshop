@@ -1,6 +1,7 @@
 compute_environment: LOCAL_MACHINE                                                                                             
-debug: false                                                                                                                   
+debug: false
 deepspeed_config:
+  deepspeed_multinode_launcher: standard
   gradient_accumulation_steps: 1
   gradient_clipping: 1.0
   offload_optimizer_device: none
@@ -11,10 +12,12 @@ deepspeed_config:
 distributed_type: DEEPSPEED
 downcast_bf16: 'no'
 machine_rank: 0
+main_process_ip: ''
+main_process_port: 8888
 main_training_function: main
 mixed_precision: bf16
-num_machines: 1
-num_processes: 1
+num_machines: 8
+num_processes: 64
 rdzv_backend: static
 same_network: true
 tpu_env: []
