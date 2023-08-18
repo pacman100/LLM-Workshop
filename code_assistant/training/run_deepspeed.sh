@@ -8,7 +8,7 @@ accelerate launch --config_file "configs/deepspeed_config.yaml"  train.py \
 --packing True \
 --output_dir "full-finetune-llama-chat-asst" \
 --per_device_train_batch_size 1 \
---gradient_accumulation_steps 2 \
+--gradient_accumulation_steps 1 \
 --dataset_text_field "content" \
 --learning_rate 5e-5  \
 --lr_scheduler_type "cosine" \

@@ -3,7 +3,6 @@ debug: false
 deepspeed_config:
   deepspeed_multinode_launcher: standard
   gradient_accumulation_steps: 1
-  gradient_clipping: 1.0
   offload_optimizer_device: none
   offload_param_device: none
   zero3_init_flag: true
