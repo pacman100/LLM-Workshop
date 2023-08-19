@@ -292,7 +292,7 @@ def create_and_prepare_model(args):
         )
 
         if args.no_gradient_checkpointing:
-            model.enable_gradient_checkpointing()
+            model.gradient_checkpointing_enable()
 
         model = get_peft_model(model, peft_config)
     return model
