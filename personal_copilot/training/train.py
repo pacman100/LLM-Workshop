@@ -357,8 +357,10 @@ def run_training(args, train_data, val_data):
 def main(args):
     if args.use_flash_attn:
         from starcoder_flash_attn_monkey_patch import replace_starcoder_attn_with_flash_attn
+        from llama_flash_attn_monkey_patch import replace_llama_attn_with_flash_attn
 
         replace_starcoder_attn_with_flash_attn()
+        replace_llama_attn_with_flash_attn()
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_path, use_auth_token=True, trust_remote_code=True)
 
