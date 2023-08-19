@@ -291,6 +291,9 @@ def create_and_prepare_model(args):
             target_modules=args.lora_target_modules.split(","),
         )
 
+        if args.no_gradient_checkpointing:
+            model.enable_gradient_checkpointing()
+
         model = get_peft_model(model, peft_config)
     return model
 
