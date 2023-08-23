@@ -6,7 +6,7 @@ accelerate launch --config_file "configs/fsdp_config.yaml"  train.py \
     --split "train" \
     --seq_length 2048 \
     --max_steps 2000 \
-    --batch_size 8 \
+    --batch_size 1 \
     --gradient_accumulation_steps 2 \
     --learning_rate 5e-5 \
     --lr_scheduler_type "cosine" \
