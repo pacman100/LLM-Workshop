@@ -11,3 +11,4 @@ wandb
 tiktoken
 deepspeed
 tqdm
+safetensors

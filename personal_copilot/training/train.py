@@ -5,6 +5,7 @@ Fine-Tune StarCoder on code/text dataset
 import argparse
 import os
 import random
+import subprocess
 
 import numpy as np
 import torch
@@ -346,10 +347,31 @@ def run_training(args, train_data, val_data):
 
     print("Training...")
     trainer.train()
+    if args.use_peft_lora:
+        print("Saving last checkpoint of the model")
+        model.save_pretrained(os.path.join(args.output_dir, "final_checkpoint/"))
 
-    print("Saving last checkpoint of the model")
-    model.save_pretrained(os.path.join(args.output_dir, "final_checkpoint/"))
-    trainer.push_to_hub()
+    # Save model and tokenizer
+    if trainer.is_fsdp_enabled:
+        trainer.accelerator.state.fsdp_plugin.set_state_dict_type("FULL_STATE_DICT")
+
+    trainer.save_model(training_args.output_dir)
+    trainer.accelerator.print(f"Model saved to {args.output_dir}")
+    # Save everything else on main process
+    if trainer.args.process_index == 0:
+        print("Sharding model if >10GB...")
+        # FSDP/DeepSpeed save the model as a single `pytorch_model.bin` file, so we need to shard it.
+        # We run this in a subprocess to avoid interference from the accelerators.
+        subprocess.run(
+            [
+                "python",
+                "shard_checkpoint.py",
+                f"--output_dir={args.output_dir}",
+            ],
+            check=True,
+        )
+        os.remove(os.path.join(args.output_dir, "training_args.bin"))
+
     if args.use_peft_lora:
         trainer.model.push_to_hub(args.output_dir)
 
