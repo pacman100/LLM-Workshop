@@ -300,14 +300,9 @@ def create_and_prepare_model(args):
 
 
 def run_training(args, train_data, val_data):
-    print("Loading the model")
-    model = create_and_prepare_model(args)
-    print(model)
-
     train_data.start_iteration = 0
 
     print(f"Starting main loop")
-
     training_args = TrainingArguments(
         output_dir=args.output_dir,
         dataloader_drop_last=True,
@@ -329,6 +324,10 @@ def run_training(args, train_data, val_data):
         run_name=f"starcoder-copilot",
         push_to_hub=True,
     )
+
+    print("Loading the model")
+    model = create_and_prepare_model(args)
+    print(model)
 
     trainer = Trainer(model=model, args=training_args, train_dataset=train_data, eval_dataset=val_data)
 
