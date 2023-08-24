@@ -14,6 +14,7 @@
 # limitations under the License.
 from dataclasses import dataclass, field
 from typing import Optional
+import warnings
 
 import torch
 from datasets import load_dataset
@@ -153,6 +154,10 @@ script_args = parser.parse_args_into_dataclasses()[0]
 
 def create_and_prepare_model(args):
     if args.use_flash_attn:
+        warnings.warn(
+            "Flash V2 support implemented here ignores padding/attention_mask/custom_mask. \n"
+            + "It is meant for continued pre-training with packing inputs to consume the entire sequence lengths."
+        )
         from starcoder_flash_attn_monkey_patch import replace_starcoder_attn_with_flash_attn
         from llama_flash_attn_monkey_patch import replace_llama_attn_with_flash_attn
 

@@ -6,6 +6,7 @@ import argparse
 import os
 import random
 import subprocess
+import warnings
 
 import numpy as np
 import torch
@@ -377,6 +378,10 @@ def run_training(args, train_data, val_data):
 
 def main(args):
     if args.use_flash_attn:
+        warnings.warn(
+            "Flash V2 support implemented here ignores padding/attention_mask/custom_mask. \n"
+            + "It is meant for continued pre-training with packing inputs to consume the entire sequence lengths."
+        )
         from starcoder_flash_attn_monkey_patch import replace_starcoder_attn_with_flash_attn
         from llama_flash_attn_monkey_patch import replace_llama_attn_with_flash_attn
 
