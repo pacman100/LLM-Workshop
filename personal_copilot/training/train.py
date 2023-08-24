@@ -297,6 +297,7 @@ def create_and_prepare_model(args):
             model.gradient_checkpointing_enable()
 
         model = get_peft_model(model, peft_config)
+        model.print_trainable_parameters()
     return model
 
 
