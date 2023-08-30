@@ -385,6 +385,7 @@ def main(args):
         )
         from starcoder_flash_attn_monkey_patch import replace_starcoder_attn_with_flash_attn
         from llama_flash_attn_monkey_patch import replace_llama_attn_with_flash_attn
+        from falcon_flash_attn_monkey_patch import replace_falcon_attn_with_flash_attn
 
         replace_starcoder_attn_with_flash_attn()
         replace_llama_attn_with_flash_attn()
