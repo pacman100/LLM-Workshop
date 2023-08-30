@@ -186,7 +186,7 @@ def create_and_prepare_model(args):
                 print("=" * 80)
 
     if args.use_4bit_qunatization or args.use_8bit_qunatization:
-        device_map = {"": 0}
+        device_map = "auto"  # {"": 0}
 
     model = AutoModelForCausalLM.from_pretrained(
         args.model_name,
