@@ -195,6 +195,7 @@ def create_and_prepare_model(args):
         device_map=device_map,
         use_cache=not args.use_gradient_checkpointing,
         trust_remote_code=True,
+        max_memory={0: "50GB", 1: "50GB"},
     )
 
     peft_config = None
