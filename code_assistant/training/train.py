@@ -207,6 +207,8 @@ def create_and_prepare_model(args):
             task_type="CAUSAL_LM",
             target_modules=script_args.lora_target_modules.split(","),
         )
+        if args.use_gradient_checkpointing:
+            model.gradient_checkpointing_enable()
 
     tokenizer = AutoTokenizer.from_pretrained(script_args.model_name, trust_remote_code=True)
     tokenizer.pad_token = tokenizer.eos_token
@@ -252,6 +254,7 @@ trainer = SFTTrainer(
 )
 
 print(f"{trainer.model}")
+trainer.model.print_trainable_parameters()
 
 if script_args.use_peft_lora:
     for name, module in trainer.model.named_modules():
