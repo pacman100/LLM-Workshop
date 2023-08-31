@@ -82,6 +82,8 @@ def get_args():
 
     parser.add_argument("--use_8bit_qunatization", action="store_true")
 
+    parser.add_argument("--push_to_hub", action="store_true")
+
     return parser.parse_args()
 
 
@@ -324,7 +326,7 @@ def run_training(args, train_data, val_data):
         bf16=args.bf16,
         weight_decay=args.weight_decay,
         run_name=f"starcoder-copilot",
-        push_to_hub=True,
+        push_to_hub=args.push_to_hub,
     )
 
     print("Loading the model")

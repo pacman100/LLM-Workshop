@@ -146,6 +146,10 @@ class ScriptArguments:
         metadata={"help": "Enables Gradient Checkpointing."},
     )
     dataset_text_field: str = field(default="text", metadata={"help": "Dataset field to use as input text."})
+    push_to_hub: Optional[bool] = field(
+        default=False,
+        metadata={"help": "If True, pushes the model to the HF Hub"},
+    )
 
 
 parser = HfArgumentParser(ScriptArguments)
@@ -231,7 +235,7 @@ training_arguments = TrainingArguments(
     num_train_epochs=script_args.num_train_epochs,
     save_strategy="epoch",
     evaluation_strategy="epoch",
-    push_to_hub=True,
+    push_to_hub=script_args.push_to_hub,
     gradient_checkpointing=script_args.use_gradient_checkpointing,
 )
 
@@ -271,6 +275,12 @@ if script_args.use_peft_lora:
 trainer.train()
 if trainer.is_fsdp_enabled:
     trainer.accelerator.state.fsdp_plugin.set_state_dict_type("FULL_STATE_DICT")
-trainer.push_to_hub()
+
+if script_args.push_to_hub:
+    trainer.push_to_hub()
+else:
+    trainer.save_model(script_args.output_dir)
+
+
 if script_args.use_peft_lora:
     trainer.model.push_to_hub(script_args.output_dir)
