@@ -13,11 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from dataclasses import dataclass, field
+import os
 from typing import Optional
 import warnings
 
 import torch
 from datasets import load_dataset
+import transformers
 from peft import LoraConfig
 from transformers import (
     AutoModelForCausalLM,
@@ -42,8 +44,6 @@ from trl import SFTTrainer
 
 
 # Define and parse arguments.
-
-
 @dataclass
 class ScriptArguments:
     """
@@ -220,6 +220,12 @@ def create_and_prepare_model(args):
     return model, peft_config, tokenizer
 
 
+is_deepspeed_peft_enabled = (
+    os.environ.get("ACCELERATE_USE_DEEPSPEED", "False").lower() == "true" and script_args.use_peft_lora
+)
+
+save_strategy = "no" if is_deepspeed_peft_enabled else "epoch"
+
 training_arguments = TrainingArguments(
     output_dir=script_args.output_dir,
     per_device_train_batch_size=script_args.per_device_train_batch_size,
@@ -233,7 +239,7 @@ training_arguments = TrainingArguments(
     warmup_ratio=script_args.warmup_ratio,
     lr_scheduler_type=script_args.lr_scheduler_type,
     num_train_epochs=script_args.num_train_epochs,
-    save_strategy="epoch",
+    save_strategy=save_strategy,
     evaluation_strategy="epoch",
     push_to_hub=script_args.push_to_hub,
     gradient_checkpointing=script_args.use_gradient_checkpointing,
@@ -273,6 +279,15 @@ if script_args.use_peft_lora:
                     module = module.to(torch.bfloat16)
 
 trainer.train()
+
+if is_deepspeed_peft_enabled:
+    trainer.accelerator.wait_for_everyone()
+    unwrapped_model = trainer.accelerator.unwrap_model(trainer.model)
+    unwrapped_model.save_pretrained(
+        script_args.output_dir, state_dict=trainer.accelerator.get_state_dict(trainer.model)
+    )
+    trainer.accelerator.wait_for_everyone()
+
 if trainer.is_fsdp_enabled:
     trainer.accelerator.state.fsdp_plugin.set_state_dict_type("FULL_STATE_DICT")
 
