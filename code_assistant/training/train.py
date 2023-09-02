@@ -301,5 +301,5 @@ else:
     trainer.save_model(script_args.output_dir)
 
 
-if script_args.use_peft_lora:
+if script_args.use_peft_lora and not is_deepspeed_peft_enabled:
     trainer.model.push_to_hub(script_args.output_dir)
