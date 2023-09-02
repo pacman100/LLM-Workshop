@@ -282,22 +282,13 @@ if script_args.use_peft_lora:
                 if script_args.bf16 and module.weight.dtype == torch.float32:
                     module = module.to(torch.bfloat16)
 
-if script_args.debug:
-    if is_deepspeed_peft_enabled:
-        trainer.accelerator.wait_for_everyone()
-        unwrapped_model = trainer.accelerator.unwrap_model(trainer.model)
-        unwrapped_model.save_pretrained(
-            script_args.output_dir, state_dict=trainer.accelerator.get_state_dict(trainer.model)
-        )
-        trainer.accelerator.wait_for_everyone()
-
 trainer.train()
 
 if is_deepspeed_peft_enabled:
     trainer.accelerator.wait_for_everyone()
-    unwrapped_model = trainer.accelerator.unwrap_model(trainer.model)
+    unwrapped_model = trainer.accelerator.unwrap_model(trainer.deepspeed)
     unwrapped_model.save_pretrained(
-        script_args.output_dir, state_dict=trainer.accelerator.get_state_dict(trainer.model)
+        script_args.output_dir, state_dict=trainer.accelerator.get_state_dict(trainer.deepspeed)
     )
     trainer.accelerator.wait_for_everyone()
 
