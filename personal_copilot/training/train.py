@@ -306,11 +306,18 @@ def create_and_prepare_model(args):
 def run_training(args, train_data, val_data):
     train_data.start_iteration = 0
 
+    is_deepspeed_peft_enabled = (
+        os.environ.get("ACCELERATE_USE_DEEPSPEED", "False").lower() == "true" and args.use_peft_lora
+    )
+
+    save_strategy = "no" if is_deepspeed_peft_enabled else "steps"
+
     print(f"Starting main loop")
     training_args = TrainingArguments(
         output_dir=args.output_dir,
         dataloader_drop_last=True,
         evaluation_strategy="steps",
+        save_strategy=save_strategy,
         max_steps=args.max_steps,
         eval_steps=args.eval_freq,
         save_steps=args.save_freq,
@@ -332,6 +339,8 @@ def run_training(args, train_data, val_data):
     print("Loading the model")
     model = create_and_prepare_model(args)
     print(model)
+    if args.use_peft_lora:
+        model.print_trainable_parameters()
 
     trainer = Trainer(model=model, args=training_args, train_dataset=train_data, eval_dataset=val_data)
 
@@ -354,11 +363,22 @@ def run_training(args, train_data, val_data):
         print("Saving last checkpoint of the model")
         model.save_pretrained(os.path.join(args.output_dir, "final_checkpoint/"))
 
+    if is_deepspeed_peft_enabled:
+        trainer.accelerator.wait_for_everyone()
+        unwrapped_model = trainer.accelerator.unwrap_model(trainer.deepspeed)
+        unwrapped_model.save_pretrained(
+            args.output_dir, state_dict=trainer.accelerator.get_state_dict(trainer.deepspeed)
+        )
+        trainer.accelerator.wait_for_everyone()
+
     # Save model and tokenizer
     if trainer.is_fsdp_enabled:
         trainer.accelerator.state.fsdp_plugin.set_state_dict_type("FULL_STATE_DICT")
 
-    trainer.save_model(training_args.output_dir)
+    if args.push_to_hub:
+        trainer.push_to_hub()
+    else:
+        trainer.save_model(args.output_dir)
     trainer.accelerator.print(f"Model saved to {args.output_dir}")
     # Save everything else on main process
     if trainer.args.process_index == 0:
@@ -391,6 +411,7 @@ def main(args):
 
         replace_starcoder_attn_with_flash_attn()
         replace_llama_attn_with_flash_attn()
+        replace_falcon_attn_with_flash_attn()
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_path, use_auth_token=True, trust_remote_code=True)
 

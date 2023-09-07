@@ -14,6 +14,7 @@
 # limitations under the License.
 from dataclasses import dataclass, field
 import os
+import subprocess
 from typing import Optional
 import warnings
 
@@ -123,6 +124,7 @@ class ScriptArguments:
     max_steps: int = field(default=10000, metadata={"help": "How many optimizer update steps to take"})
     warmup_ratio: float = field(default=0.03, metadata={"help": "Fraction of steps to do a warmup for"})
     save_steps: int = field(default=10, metadata={"help": "Save checkpoint every X updates steps."})
+    eval_steps: int = field(default=10, metadata={"help": "Eval model every X steps."})
     logging_steps: int = field(default=10, metadata={"help": "Log every X updates steps."})
     output_dir: str = field(default="results", metadata={"help": "Where to store the final model."})
     use_flash_attn: Optional[bool] = field(
@@ -172,6 +174,7 @@ def create_and_prepare_model(args):
 
         replace_starcoder_attn_with_flash_attn()
         replace_llama_attn_with_flash_attn()
+        replace_falcon_attn_with_flash_attn()
     device_map = None
     bnb_config = None
     load_in_8bit = args.use_8bit_qunatization
@@ -228,14 +231,13 @@ is_deepspeed_peft_enabled = (
     os.environ.get("ACCELERATE_USE_DEEPSPEED", "False").lower() == "true" and script_args.use_peft_lora
 )
 
-save_strategy = "no" if is_deepspeed_peft_enabled else "epoch"
+save_strategy = "no" if is_deepspeed_peft_enabled else "steps"
 
 training_arguments = TrainingArguments(
     output_dir=script_args.output_dir,
     per_device_train_batch_size=script_args.per_device_train_batch_size,
     gradient_accumulation_steps=script_args.gradient_accumulation_steps,
     optim=script_args.optim,
-    logging_steps=script_args.logging_steps,
     learning_rate=script_args.learning_rate,
     fp16=script_args.fp16,
     bf16=script_args.bf16,
@@ -243,8 +245,12 @@ training_arguments = TrainingArguments(
     warmup_ratio=script_args.warmup_ratio,
     lr_scheduler_type=script_args.lr_scheduler_type,
     num_train_epochs=script_args.num_train_epochs,
+    evaluation_strategy="steps",
     save_strategy=save_strategy,
-    evaluation_strategy="epoch",
+    max_steps=script_args.max_steps,
+    eval_steps=script_args.eval_steps,
+    save_steps=script_args.save_steps,
+    logging_steps=script_args.logging_steps,
     push_to_hub=script_args.push_to_hub,
     gradient_checkpointing=script_args.use_gradient_checkpointing,
 )
@@ -268,7 +274,8 @@ trainer = SFTTrainer(
 )
 
 print(f"{trainer.model}")
-trainer.model.print_trainable_parameters()
+if script_args.use_peft_lora:
+    trainer.model.print_trainable_parameters()
 
 if script_args.use_peft_lora:
     for name, module in trainer.model.named_modules():
@@ -300,6 +307,20 @@ if script_args.push_to_hub:
 else:
     trainer.save_model(script_args.output_dir)
 
+# Save everything else on main process
+if trainer.args.process_index == 0:
+    print("Sharding model if >10GB...")
+    # FSDP/DeepSpeed save the model as a single `pytorch_model.bin` file, so we need to shard it.
+    # We run this in a subprocess to avoid interference from the accelerators.
+    subprocess.run(
+        [
+            "python",
+            "shard_checkpoint.py",
+            f"--output_dir={script_args.output_dir}",
+        ],
+        check=True,
+    )
+    os.remove(os.path.join(script_args.output_dir, "training_args.bin"))
 
 if script_args.use_peft_lora and not is_deepspeed_peft_enabled:
     trainer.model.push_to_hub(script_args.output_dir)

@@ -15,6 +15,7 @@ python train.py \
     --eval_freq 100 \
     --save_freq 100 \
     --log_freq 25 \
+    --push_to_hub \
     --num_workers 4 \
     --bf16 \
     --no_fp16 \
