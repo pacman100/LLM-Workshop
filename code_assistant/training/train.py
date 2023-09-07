@@ -302,10 +302,11 @@ if is_deepspeed_peft_enabled:
 if trainer.is_fsdp_enabled:
     trainer.accelerator.state.fsdp_plugin.set_state_dict_type("FULL_STATE_DICT")
 
-if script_args.push_to_hub:
-    trainer.push_to_hub()
-else:
-    trainer.save_model(script_args.output_dir)
+if not is_deepspeed_peft_enabled:
+    if script_args.push_to_hub:
+        trainer.push_to_hub()
+    else:
+        trainer.save_model(script_args.output_dir)
 
 # Save everything else on main process
 if trainer.args.process_index == 0:
