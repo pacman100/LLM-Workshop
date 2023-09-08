@@ -33,11 +33,16 @@ def shard_checkpoint(checkpoint_dir: str, shard_size_gb: int = 10):
             )
             # We load on CPU to avoid OOM errors on GPU
             state_dict = load_state_dict(checkpoint_file)
+            print("checkpoint loaded")
             config = AutoConfig.from_pretrained(checkpoint_dir, trust_remote_code=True)
+            print("loading checkpoint into the model")
             model = AutoModelForCausalLM.from_pretrained(
                 None, config=config, state_dict=state_dict, torch_dtype=torch.bfloat16, trust_remote_code=True
             )
+            print("model loaded with the checkpoint")
+            print("sharding the model")
             model.save_pretrained(checkpoint_dir, max_shard_size=f"{shard_size_gb}GB")
+            print("model sharded")
             os.remove(checkpoint_file)
             print("`pytorch_model.bin` deleted.")
 
