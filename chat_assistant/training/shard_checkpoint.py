@@ -31,6 +31,7 @@ def shard_checkpoint(checkpoint_dir: str, shard_size_gb: int = 10):
             print(
                 f"`pytorch_model.bin` is greater than {shard_size_gb}GB, sharding the model in {shard_size_gb}GB chunks"
             )
+            print("loading the checkpoint")
             # We load on CPU to avoid OOM errors on GPU
             state_dict = load_state_dict(checkpoint_file)
             print("checkpoint loaded")
