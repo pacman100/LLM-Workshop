@@ -172,12 +172,12 @@ def main(args):
         gradient_checkpointing=args.use_gradient_checkpointing,
     )
 
-    # datasets
-    train_dataset, eval_dataset = create_datasets(tokenizer, args)
-
     # model
     model, peft_config, tokenizer = create_and_prepare_model(args)
     model.config.use_cache = False
+
+    # datasets
+    train_dataset, eval_dataset = create_datasets(tokenizer, args)
 
     # trainer
     trainer = Trainer(model=model, args=training_arguments, train_dataset=train_dataset, eval_dataset=eval_dataset)
