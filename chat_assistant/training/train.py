@@ -138,6 +138,7 @@ class ScriptArguments:
         default=False,
         metadata={"help": "If True, pushes the model to the HF Hub"},
     )
+    num_workers: int = field(default=4, metadata={"help": "Number of dataset workers to use."})
     debug: Optional[bool] = field(
         default=False,
         metadata={"help": "If True, tests things like proper saving/loading/logging of model"},
