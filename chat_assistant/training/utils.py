@@ -129,7 +129,7 @@ def create_datasets(tokenizer, args):
     train_data = dataset["train"]
     valid_data = dataset["test"]
     print(f"Size of the train set: {len(train_data)}. Size of the validation set: {len(valid_data)}")
-    chars_per_token = chars_token_ratio(train_data, tokenizer, args.data_column)
+    chars_per_token = chars_token_ratio(train_data, tokenizer, args.dataset_text_field)
     print(f"The character to token ratio of the dataset is: {chars_per_token:.2f}")
     train_dataset = ConstantLengthDataset(
         tokenizer,
@@ -137,7 +137,7 @@ def create_datasets(tokenizer, args):
         infinite=True,
         seq_length=args.seq_length,
         chars_per_token=chars_per_token,
-        content_field=args.data_column,
+        content_field=args.dataset_text_field,
         shuffle=True,
         add_eos_token=False,
     )
@@ -147,7 +147,7 @@ def create_datasets(tokenizer, args):
         infinite=False,
         seq_length=args.seq_length,
         chars_per_token=chars_per_token,
-        content_field=args.data_column,
+        content_field=args.dataset_text_field,
         shuffle=False,
         add_eos_token=False,
     )
