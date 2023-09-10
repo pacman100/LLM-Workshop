@@ -227,7 +227,8 @@ def main(args):
             ],
             check=True,
         )
-        os.remove(os.path.join(args.output_dir, "training_args.bin"))
+        if "training_args.bin" in os.listdir(args.output_dir):
+            os.remove(os.path.join(args.output_dir, "training_args.bin"))
 
 
 if __name__ == "__main__":
