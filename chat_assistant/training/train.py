@@ -201,10 +201,10 @@ def main(args):
 
     if is_deepspeed_peft_enabled:
         trainer.accelerator.wait_for_everyone()
+        state_dict = trainer.accelerator.get_state_dict(trainer.deepspeed)
         unwrapped_model = trainer.accelerator.unwrap_model(trainer.deepspeed)
-        unwrapped_model.save_pretrained(
-            args.output_dir, state_dict=trainer.accelerator.get_state_dict(trainer.deepspeed)
-        )
+        if trainer.accelerator.is_main_process:
+            unwrapped_model.save_pretrained(args.output_dir, state_dict=state_dict)
         trainer.accelerator.wait_for_everyone()
     else:
         if args.push_to_hub:
