@@ -5,7 +5,7 @@ from torch.utils.data import IterableDataset
 from datasets import load_dataset
 from tqdm import tqdm
 import warnings
-from peft import LoraConfig, get_peft_model
+from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 from peft.tuners.lora import LoraLayer
 from transformers import (
     AutoModelForCausalLM,
@@ -212,6 +212,9 @@ def create_and_prepare_model(args):
             task_type="CAUSAL_LM",
             target_modules=args.lora_target_modules.split(","),
         )
+        if (args.use_4bit_qunatization or args.use_8bit_qunatization) and args.use_peft_lora:
+            model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=args.use_gradient_checkpointing)
+
         if args.use_gradient_checkpointing:
             model.gradient_checkpointing_enable()
 
