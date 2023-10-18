@@ -157,18 +157,6 @@ def create_datasets(tokenizer, args):
 
 
 def create_and_prepare_model(args):
-    if args.use_flash_attn:
-        warnings.warn(
-            "Flash V2 support implemented here ignores padding/attention_mask/custom_mask. \n"
-            + "It is meant for continued pre-training with packing inputs to consume the entire sequence lengths."
-        )
-        from starcoder_flash_attn_monkey_patch import replace_starcoder_attn_with_flash_attn
-        from llama_flash_attn_monkey_patch import replace_llama_attn_with_flash_attn
-        from falcon_flash_attn_monkey_patch import replace_falcon_attn_with_flash_attn
-
-        replace_starcoder_attn_with_flash_attn()
-        replace_llama_attn_with_flash_attn()
-        replace_falcon_attn_with_flash_attn()
     device_map = None
     bnb_config = None
     load_in_8bit = args.use_8bit_qunatization
@@ -200,6 +188,7 @@ def create_and_prepare_model(args):
         device_map=device_map,
         use_cache=not args.use_gradient_checkpointing,
         trust_remote_code=True,
+        use_flash_attention_2=args.use_flash_attn,
     )
 
     peft_config = None
