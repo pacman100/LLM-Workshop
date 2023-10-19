@@ -171,6 +171,7 @@ def main(args):
         logging_steps=args.logging_steps,
         push_to_hub=args.push_to_hub,
         gradient_checkpointing=args.use_gradient_checkpointing,
+        include_tokens_per_second=True,
     )
 
     # model

@@ -334,6 +334,7 @@ def run_training(args, train_data, val_data):
         weight_decay=args.weight_decay,
         run_name=f"starcoder-copilot",
         push_to_hub=args.push_to_hub,
+        include_tokens_per_second=True,
     )
 
     print("Loading the model")
