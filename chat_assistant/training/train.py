@@ -63,10 +63,6 @@ class ScriptArguments:
         default="timdettmers/openassistant-guanaco",
         metadata={"help": "The preference dataset to use."},
     )
-    use_4bit: Optional[bool] = field(
-        default=True,
-        metadata={"help": "Activate 4bit precision base model loading"},
-    )
     use_nested_quant: Optional[bool] = field(
         default=False,
         metadata={"help": "Activate nested quantization for 4bit base models"},
