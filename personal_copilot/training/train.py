@@ -152,6 +152,7 @@ class ConstantLengthDataset(IterableDataset):
     def __iter__(self):
         iterator = iter(self.dataset)
         more_examples = True
+        np_rng = np.random.RandomState(seed=self.seed)
         while more_examples:
             buffer, buffer_len = [], 0
             while True:
@@ -169,7 +170,6 @@ class ConstantLengthDataset(IterableDataset):
             tokenized_inputs = self.tokenizer(buffer, truncation=False)["input_ids"]
             all_token_ids = []
 
-            np_rng = np.random.RandomState(seed=self.seed)
             for tokenized_input in tokenized_inputs:
                 # optionally do FIM permutations
                 if self.fim_rate > 0:
