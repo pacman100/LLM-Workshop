@@ -209,6 +209,7 @@ def main(args):
             if args.use_peft_lora:
                 trainer.model.push_to_hub(args.output_dir)
         else:
+            tokenizer.save_pretrained(args.output_dir)
             trainer.save_model(args.output_dir)
 
     # Save everything else on main process
