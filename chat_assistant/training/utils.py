@@ -188,8 +188,7 @@ def create_and_prepare_model(args):
         device_map=device_map,
         use_cache=not args.use_gradient_checkpointing,
         trust_remote_code=True,
-        use_flash_attention_2=args.use_flash_attn,
-        torch_dtype=torch.bfloat16 if args.bf16 else torch.float16
+        use_flash_attention_2=args.use_flash_attn
     )
 
     peft_config = None
