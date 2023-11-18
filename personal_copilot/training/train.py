@@ -203,6 +203,7 @@ class ConstantLengthDataset(IterableDataset):
 def create_datasets(tokenizer, args):
     dataset = load_dataset(
         args.dataset_name,
+        data_dir=args.subset,
         split=args.split,
         use_auth_token=True,
         num_proc=args.num_workers if not args.streaming else None,
@@ -397,7 +398,7 @@ def run_training(args, train_data, val_data):
         )
         os.remove(os.path.join(args.output_dir, "training_args.bin"))
 
-    if args.use_peft_lora:
+    if args.push_to_hub:
         trainer.model.push_to_hub(args.output_dir)
 
 
