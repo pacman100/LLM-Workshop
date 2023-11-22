@@ -215,10 +215,14 @@ def create_datasets(tokenizer, args):
         train_data = dataset.skip(args.size_valid_set)
         train_data = train_data.shuffle(buffer_size=args.shuffle_buffer, seed=args.seed)
     else:
-        dataset = dataset.train_test_split(test_size=args.test_size, seed=args.seed, shuffle=True)
+        dataset = dataset.train_test_split(
+            test_size=args.test_size, seed=args.seed, shuffle=True
+        )
         train_data = dataset["train"]
         valid_data = dataset["test"]
-        print(f"Size of the train set: {len(train_data)}. Size of the validation set: {len(valid_data)}")
+        print(
+            f"Size of the train set: {len(train_data)}. Size of the validation set: {len(valid_data)}"
+        )
     chars_per_token = chars_token_ratio(train_data, tokenizer, args.data_column)
     print(f"The character to token ratio of the dataset is: {chars_per_token:.2f}")
     train_dataset = ConstantLengthDataset(
@@ -267,7 +271,9 @@ def create_and_prepare_model(args):
             major, _ = torch.cuda.get_device_capability()
             if major >= 8:
                 print("=" * 80)
-                print("Your GPU supports bfloat16, you can accelerate training with the argument --bf16")
+                print(
+                    "Your GPU supports bfloat16, you can accelerate training with the argument --bf16"
+                )
                 print("=" * 80)
 
     if args.use_4bit_qunatization or args.use_8bit_qunatization:
@@ -281,11 +287,15 @@ def create_and_prepare_model(args):
         use_cache=not args.no_gradient_checkpointing,
         trust_remote_code=True,
         use_flash_attention_2=args.use_flash_attn,
-        torch_dtype=torch.bfloat16 if args.bf16 else torch.float16
+        torch_dtype=torch.bfloat16 if args.bf16 else torch.float16,
     )
 
-    if (args.use_4bit_qunatization or args.use_8bit_qunatization) and args.use_peft_lora:
-        model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=args.no_gradient_checkpointing)
+    if (
+        args.use_4bit_qunatization or args.use_8bit_qunatization
+    ) and args.use_peft_lora:
+        model = prepare_model_for_kbit_training(
+            model, use_gradient_checkpointing=args.no_gradient_checkpointing
+        )
 
     if args.use_peft_lora:
         peft_config = LoraConfig(
@@ -309,7 +319,8 @@ def run_training(args, train_data, val_data):
     train_data.start_iteration = 0
 
     is_deepspeed_peft_enabled = (
-        os.environ.get("ACCELERATE_USE_DEEPSPEED", "False").lower() == "true" and args.use_peft_lora
+        os.environ.get("ACCELERATE_USE_DEEPSPEED", "False").lower() == "true"
+        and args.use_peft_lora
     )
 
     save_strategy = "no" if is_deepspeed_peft_enabled else "steps"
@@ -345,7 +356,9 @@ def run_training(args, train_data, val_data):
     if args.use_peft_lora:
         model.print_trainable_parameters()
 
-    trainer = Trainer(model=model, args=training_args, train_dataset=train_data, eval_dataset=val_data)
+    trainer = Trainer(
+        model=model, args=training_args, train_dataset=train_data, eval_dataset=val_data
+    )
 
     # post process for faster training when using PEFT + INT4 Quantization
     if args.use_peft_lora:
@@ -370,7 +383,8 @@ def run_training(args, train_data, val_data):
         trainer.accelerator.wait_for_everyone()
         unwrapped_model = trainer.accelerator.unwrap_model(trainer.deepspeed)
         unwrapped_model.save_pretrained(
-            args.output_dir, state_dict=trainer.accelerator.get_state_dict(trainer.deepspeed)
+            args.output_dir,
+            state_dict=trainer.accelerator.get_state_dict(trainer.deepspeed),
         )
         trainer.accelerator.wait_for_everyone()
 
@@ -383,27 +397,15 @@ def run_training(args, train_data, val_data):
     else:
         trainer.save_model(args.output_dir)
     trainer.accelerator.print(f"Model saved to {args.output_dir}")
-    # Save everything else on main process
-    if trainer.args.process_index == 0:
-        print("Sharding model if >10GB...")
-        # FSDP/DeepSpeed save the model as a single `pytorch_model.bin` file, so we need to shard it.
-        # We run this in a subprocess to avoid interference from the accelerators.
-        subprocess.run(
-            [
-                "python",
-                "shard_checkpoint.py",
-                f"--output_dir={args.output_dir}",
-            ],
-            check=True,
-        )
-        os.remove(os.path.join(args.output_dir, "training_args.bin"))
 
     if args.push_to_hub:
         trainer.model.push_to_hub(args.output_dir)
 
 
 def main(args):
-    tokenizer = AutoTokenizer.from_pretrained(args.model_path, use_auth_token=True, trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(
+        args.model_path, use_auth_token=True, trust_remote_code=True
+    )
 
     train_dataset, eval_dataset = create_datasets(tokenizer, args)
 
