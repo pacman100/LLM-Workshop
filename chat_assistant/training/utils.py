@@ -77,10 +77,9 @@ def create_datasets(tokenizer, data_args, training_args):
     print(f"The character to token ratio of the dataset is: {chars_per_token:.2f}")
     dataset_class = (
         ConstantLengthDataset
-        if "epoch" in str(training_args.save_strategy)
+        if "epoch".upper() in str(training_args.save_strategy)
         else PackedIterableDataset
     )
-    print(dataset_class)
 
     train_dataset = dataset_class(
         tokenizer,

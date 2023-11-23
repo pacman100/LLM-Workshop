@@ -116,7 +116,9 @@ def main(model_args, data_args, training_args):
         os.environ.get("ACCELERATE_USE_DEEPSPEED", "False").lower() == "true"
         and model_args.use_peft_lora
     )
-    if is_deepspeed_peft_enabled and "steps" not in str(training_args.save_strategy):
+    if is_deepspeed_peft_enabled and "steps".upper() not in str(
+        training_args.save_strategy
+    ):
         raise ValueError("When using DeepSpeed+PEFT, use the 'steps' save_strategy.")
 
     # model
