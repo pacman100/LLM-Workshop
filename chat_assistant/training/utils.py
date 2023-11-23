@@ -1,6 +1,11 @@
 import random
 import torch
-from transformers import TrainerCallback, TrainingArguments, TrainerState, TrainerControl
+from transformers import (
+    TrainerCallback,
+    TrainingArguments,
+    TrainerState,
+    TrainerControl,
+)
 from torch.utils.data import IterableDataset
 from datasets import load_dataset
 from tqdm import tqdm
@@ -14,6 +19,16 @@ from transformers import (
     AutoTokenizer,
     TrainingArguments,
 )
+from trl.trainer import PackedIterableDataset, ConstantLengthDataset
+
+
+def save_peft_deepspeed_ckpt(trainer, output_dir):
+    trainer.accelerator.wait_for_everyone()
+    state_dict = trainer.accelerator.get_state_dict(trainer.deepspeed)
+    unwrapped_model = trainer.accelerator.unwrap_model(trainer.deepspeed)
+    if trainer.accelerator.is_main_process:
+        unwrapped_model.save_pretrained(output_dir, state_dict=state_dict)
+    trainer.accelerator.wait_for_everyone()
 
 
 class SaveDeepSpeedPeftModelCallback(TrainerCallback):
@@ -29,88 +44,8 @@ class SaveDeepSpeedPeftModelCallback(TrainerCallback):
         **kwargs,
     ):
         if (state.global_step + 1) % self.save_steps == 0:
-            self.trainer.accelerator.wait_for_everyone()
-            state_dict = self.trainer.accelerator.get_state_dict(self.trainer.deepspeed)
-            unwrapped_model = self.trainer.accelerator.unwrap_model(self.trainer.deepspeed)
-            if self.trainer.accelerator.is_main_process:
-                unwrapped_model.save_pretrained(args.output_dir, state_dict=state_dict)
-            self.trainer.accelerator.wait_for_everyone()
+            save_peft_deepspeed_ckpt(self.trainer, args.output_dir)
         return control
-
-
-class ConstantLengthDataset(IterableDataset):
-    """
-    Iterable dataset that returns constant length chunks of tokens from stream of text files.
-        Args:
-            tokenizer (Tokenizer): The processor used for proccessing the data.
-            dataset (dataset.Dataset): Dataset with text files.
-            infinite (bool): If True the iterator is reset after dataset reaches end else stops.
-            seq_length (int): Length of token sequences to return.
-            num_of_sequences (int): Number of token sequences to keep in buffer.
-            chars_per_token (int): Number of characters per token used to estimate number of tokens in text buffer.
-            shuffle (bool): If true, the samples in each buffer are suffled. Default is `True`.
-            add_eos_token (bool): If true, each buffer is delimited with eos token. Default is `True`.
-    """
-
-    def __init__(
-        self,
-        tokenizer,
-        dataset,
-        infinite=False,
-        seq_length=1024,
-        num_of_sequences=1024,
-        chars_per_token=3.6,
-        content_field="content",
-        shuffle=True,
-        add_eos_token=True,
-    ):
-        self.tokenizer = tokenizer
-        self.concat_token_id = tokenizer.eos_token_id
-        self.dataset = dataset
-        self.seq_length = seq_length
-        self.infinite = infinite
-        self.current_size = 0
-        self.max_buffer_size = seq_length * chars_per_token * num_of_sequences
-        self.content_field = content_field
-        self.shuffle = shuffle
-        self.add_eos_token = add_eos_token
-
-    def __iter__(self):
-        iterator = iter(self.dataset)
-        more_examples = True
-        while more_examples:
-            buffer, buffer_len = [], 0
-            while True:
-                if buffer_len >= self.max_buffer_size:
-                    break
-                try:
-                    buffer.append(next(iterator)[self.content_field])
-                    buffer_len += len(buffer[-1])
-                except StopIteration:
-                    if self.infinite:
-                        iterator = iter(self.dataset)
-                    else:
-                        more_examples = False
-                        break
-            tokenized_inputs = self.tokenizer(buffer, truncation=False)["input_ids"]
-            all_token_ids = []
-            for tokenized_input in tokenized_inputs:
-                if self.add_eos_token:
-                    tokenized_input = tokenized_input + [self.concat_token_id]
-                all_token_ids.extend(tokenized_input)
-            examples = []
-            for i in range(0, len(all_token_ids), self.seq_length):
-                input_ids = all_token_ids[i : i + self.seq_length]
-                if len(input_ids) == self.seq_length:
-                    examples.append(input_ids)
-            if self.shuffle:
-                random.shuffle(examples)
-            for example in examples:
-                self.current_size += 1
-                yield {
-                    "input_ids": torch.LongTensor(example),
-                    "labels": torch.LongTensor(example),
-                }
 
 
 def chars_token_ratio(dataset, tokenizer, data_column, nb_examples=400):
@@ -125,32 +60,44 @@ def chars_token_ratio(dataset, tokenizer, data_column, nb_examples=400):
     return total_characters / total_tokens
 
 
-def create_datasets(tokenizer, args):
-    dataset = load_dataset(args.dataset_name, use_auth_token=True, num_proc=args.num_workers)
+def create_datasets(tokenizer, data_args, training_args):
+    dataset = load_dataset(
+        data_args.dataset_name,
+        use_auth_token=True,
+        num_proc=training_args.dataloader_num_workers,
+    )
     train_data = dataset["train"]
     valid_data = dataset["test"]
-    print(f"Size of the train set: {len(train_data)}. Size of the validation set: {len(valid_data)}")
-    chars_per_token = chars_token_ratio(train_data, tokenizer, args.dataset_text_field)
+    print(
+        f"Size of the train set: {len(train_data)}. Size of the validation set: {len(valid_data)}"
+    )
+    chars_per_token = chars_token_ratio(
+        train_data, tokenizer, data_args.dataset_text_field
+    )
     print(f"The character to token ratio of the dataset is: {chars_per_token:.2f}")
-    train_dataset = ConstantLengthDataset(
+    dataset_class = (
+        ConstantLengthDataset
+        if "epoch" in str(training_args.save_strategy)
+        else PackedIterableDataset
+    )
+
+    train_dataset = dataset_class(
         tokenizer,
         train_data,
-        infinite=True,
-        seq_length=args.max_seq_length,
+        seq_length=data_args.max_seq_length,
         chars_per_token=chars_per_token,
-        content_field=args.dataset_text_field,
+        content_field=data_args.dataset_text_field,
         shuffle=True,
-        add_eos_token=False,
+        append_concat_token=False,
     )
-    valid_dataset = ConstantLengthDataset(
+    valid_dataset = dataset_class(
         tokenizer,
         valid_data,
-        infinite=False,
-        seq_length=args.max_seq_length,
+        seq_length=data_args.max_seq_length,
         chars_per_token=chars_per_token,
-        content_field=args.dataset_text_field,
+        content_field=data_args.dataset_text_field,
         shuffle=False,
-        add_eos_token=False,
+        append_concat_token=False,
     )
 
     return train_dataset, valid_dataset
@@ -175,20 +122,21 @@ def create_and_prepare_model(args):
             major, _ = torch.cuda.get_device_capability()
             if major >= 8:
                 print("=" * 80)
-                print("Your GPU supports bfloat16, you can accelerate training with the argument --bf16")
+                print(
+                    "Your GPU supports bfloat16, you can accelerate training with the argument --bf16"
+                )
                 print("=" * 80)
 
     if args.use_4bit_qunatization or args.use_8bit_qunatization:
         device_map = "auto"  # {"": 0}
 
     model = AutoModelForCausalLM.from_pretrained(
-        args.model_name,
+        args.model_name_or_path,
         load_in_8bit=load_in_8bit,
         quantization_config=bnb_config,
         device_map=device_map,
-        use_cache=not args.use_gradient_checkpointing,
+        use_flash_attention_2=args.use_flash_attn,
         trust_remote_code=True,
-        use_flash_attention_2=args.use_flash_attn
     )
 
     peft_config = None
@@ -201,14 +149,6 @@ def create_and_prepare_model(args):
             task_type="CAUSAL_LM",
             target_modules=args.lora_target_modules.split(","),
         )
-        if (args.use_4bit_qunatization or args.use_8bit_qunatization) and args.use_peft_lora:
-            model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=args.use_gradient_checkpointing)
-
-        if args.use_gradient_checkpointing:
-            model.gradient_checkpointing_enable()
-
-        model = get_peft_model(model, peft_config)
-        model.print_trainable_parameters()
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_name, trust_remote_code=True)
     tokenizer.pad_token = tokenizer.eos_token
