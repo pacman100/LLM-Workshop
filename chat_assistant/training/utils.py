@@ -80,6 +80,7 @@ def create_datasets(tokenizer, data_args, training_args):
         if "epoch" in str(training_args.save_strategy)
         else PackedIterableDataset
     )
+    print(dataset_class)
 
     train_dataset = dataset_class(
         tokenizer,
