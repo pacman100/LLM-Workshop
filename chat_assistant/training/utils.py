@@ -86,7 +86,7 @@ def create_datasets(tokenizer, data_args, training_args):
         train_data,
         seq_length=data_args.max_seq_length,
         chars_per_token=chars_per_token,
-        content_field=data_args.dataset_text_field,
+        dataset_text_field=data_args.dataset_text_field,
         shuffle=True,
         append_concat_token=False,
     )
@@ -95,7 +95,7 @@ def create_datasets(tokenizer, data_args, training_args):
         valid_data,
         seq_length=data_args.max_seq_length,
         chars_per_token=chars_per_token,
-        content_field=data_args.dataset_text_field,
+        dataset_text_field=data_args.dataset_text_field,
         shuffle=False,
         append_concat_token=False,
     )
