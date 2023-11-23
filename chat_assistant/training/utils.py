@@ -150,7 +150,9 @@ def create_and_prepare_model(args):
             target_modules=args.lora_target_modules.split(","),
         )
 
-    tokenizer = AutoTokenizer.from_pretrained(args.model_name, trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(
+        args.model_name_or_path, trust_remote_code=True
+    )
     tokenizer.pad_token = tokenizer.eos_token
 
     return model, peft_config, tokenizer
