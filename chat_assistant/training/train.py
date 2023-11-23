@@ -102,12 +102,6 @@ class DataTrainingArguments:
         default="text", metadata={"help": "Dataset field to use as input text."}
     )
     max_seq_length: Optional[int] = field(default=512)
-    debug: Optional[bool] = field(
-        default=False,
-        metadata={
-            "help": "If True, tests things like proper saving/loading/logging of model"
-        },
-    )
     append_concat_token: Optional[bool] = field(
         default=False,
         metadata={
