@@ -1,6 +1,11 @@
 import random
 import torch
-from transformers import TrainerCallback, TrainingArguments, TrainerState, TrainerControl
+from transformers import (
+    TrainerCallback,
+    TrainingArguments,
+    TrainerState,
+    TrainerControl,
+)
 from torch.utils.data import IterableDataset
 from datasets import load_dataset
 from tqdm import tqdm
@@ -31,7 +36,9 @@ class SaveDeepSpeedPeftModelCallback(TrainerCallback):
         if (state.global_step + 1) % self.save_steps == 0:
             self.trainer.accelerator.wait_for_everyone()
             state_dict = self.trainer.accelerator.get_state_dict(self.trainer.deepspeed)
-            unwrapped_model = self.trainer.accelerator.unwrap_model(self.trainer.deepspeed)
+            unwrapped_model = self.trainer.accelerator.unwrap_model(
+                self.trainer.deepspeed
+            )
             if self.trainer.accelerator.is_main_process:
                 unwrapped_model.save_pretrained(args.output_dir, state_dict=state_dict)
             self.trainer.accelerator.wait_for_everyone()
@@ -126,10 +133,14 @@ def chars_token_ratio(dataset, tokenizer, data_column, nb_examples=400):
 
 
 def create_datasets(tokenizer, args):
-    dataset = load_dataset(args.dataset_name, use_auth_token=True, num_proc=args.num_workers)
+    dataset = load_dataset(
+        args.dataset_name, use_auth_token=True, num_proc=args.num_workers
+    )
     train_data = dataset["train"]
     valid_data = dataset["test"]
-    print(f"Size of the train set: {len(train_data)}. Size of the validation set: {len(valid_data)}")
+    print(
+        f"Size of the train set: {len(train_data)}. Size of the validation set: {len(valid_data)}"
+    )
     chars_per_token = chars_token_ratio(train_data, tokenizer, args.dataset_text_field)
     print(f"The character to token ratio of the dataset is: {chars_per_token:.2f}")
     train_dataset = ConstantLengthDataset(
@@ -175,7 +186,9 @@ def create_and_prepare_model(args):
             major, _ = torch.cuda.get_device_capability()
             if major >= 8:
                 print("=" * 80)
-                print("Your GPU supports bfloat16, you can accelerate training with the argument --bf16")
+                print(
+                    "Your GPU supports bfloat16, you can accelerate training with the argument --bf16"
+                )
                 print("=" * 80)
 
     if args.use_4bit_qunatization or args.use_8bit_qunatization:
@@ -188,7 +201,8 @@ def create_and_prepare_model(args):
         device_map=device_map,
         use_cache=not args.use_gradient_checkpointing,
         trust_remote_code=True,
-        use_flash_attention_2=args.use_flash_attn
+        # use_flash_attention_2=args.use_flash_attn
+        attn_implementation="sdpa" if args.use_flash_attn else "eager",
     )
 
     peft_config = None
@@ -201,8 +215,12 @@ def create_and_prepare_model(args):
             task_type="CAUSAL_LM",
             target_modules=args.lora_target_modules.split(","),
         )
-        if (args.use_4bit_qunatization or args.use_8bit_qunatization) and args.use_peft_lora:
-            model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=args.use_gradient_checkpointing)
+        if (
+            args.use_4bit_qunatization or args.use_8bit_qunatization
+        ) and args.use_peft_lora:
+            model = prepare_model_for_kbit_training(
+                model, use_gradient_checkpointing=args.use_gradient_checkpointing
+            )
 
         if args.use_gradient_checkpointing:
             model.gradient_checkpointing_enable()
