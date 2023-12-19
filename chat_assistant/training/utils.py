@@ -135,8 +135,9 @@ def create_and_prepare_model(args):
         load_in_8bit=load_in_8bit,
         quantization_config=bnb_config,
         device_map=device_map,
-        use_flash_attention_2=args.use_flash_attn,
         trust_remote_code=True,
+        # use_flash_attention_2=args.use_flash_attn
+        attn_implementation="sdpa" if args.use_flash_attn else "eager",
     )
 
     peft_config = None
