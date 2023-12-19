@@ -1,51 +1,14 @@
-import random
 import torch
-from transformers import (
-    TrainerCallback,
-    TrainingArguments,
-    TrainerState,
-    TrainerControl,
-)
-from torch.utils.data import IterableDataset
 from datasets import load_dataset
 from tqdm import tqdm
-import warnings
-from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+from peft import LoraConfig
 from peft.tuners.lora import LoraLayer
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
     BitsAndBytesConfig,
-    AutoTokenizer,
-    TrainingArguments,
 )
-from trl.trainer import PackedIterableDataset, ConstantLengthDataset
-
-
-def save_peft_deepspeed_ckpt(trainer, output_dir):
-    trainer.accelerator.wait_for_everyone()
-    state_dict = trainer.accelerator.get_state_dict(trainer.deepspeed)
-    unwrapped_model = trainer.accelerator.unwrap_model(trainer.deepspeed)
-    if trainer.accelerator.is_main_process:
-        unwrapped_model.save_pretrained(output_dir, state_dict=state_dict)
-    trainer.accelerator.wait_for_everyone()
-
-
-class SaveDeepSpeedPeftModelCallback(TrainerCallback):
-    def __init__(self, trainer, save_steps=500):
-        self.trainer = trainer
-        self.save_steps = save_steps
-
-    def on_step_end(
-        self,
-        args: TrainingArguments,
-        state: TrainerState,
-        control: TrainerControl,
-        **kwargs,
-    ):
-        if (state.global_step + 1) % self.save_steps == 0:
-            save_peft_deepspeed_ckpt(self.trainer, args.output_dir)
-        return control
+from trl.trainer import ConstantLengthDataset
 
 
 def chars_token_ratio(dataset, tokenizer, data_column, nb_examples=400):
@@ -75,13 +38,8 @@ def create_datasets(tokenizer, data_args, training_args):
         train_data, tokenizer, data_args.dataset_text_field
     )
     print(f"The character to token ratio of the dataset is: {chars_per_token:.2f}")
-    dataset_class = (
-        ConstantLengthDataset
-        if "epoch".upper() in str(training_args.save_strategy)
-        else PackedIterableDataset
-    )
 
-    train_dataset = dataset_class(
+    train_dataset = ConstantLengthDataset(
         tokenizer,
         train_data,
         seq_length=data_args.max_seq_length,
@@ -90,7 +48,7 @@ def create_datasets(tokenizer, data_args, training_args):
         shuffle=True,
         append_concat_token=False,
     )
-    valid_dataset = dataset_class(
+    valid_dataset = ConstantLengthDataset(
         tokenizer,
         valid_data,
         seq_length=data_args.max_seq_length,

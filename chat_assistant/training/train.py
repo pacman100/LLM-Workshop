@@ -19,13 +19,7 @@ from typing import Optional
 
 from transformers import HfArgumentParser, TrainingArguments
 from trl import SFTTrainer
-from trl.trainer.utils import PeftSavingCallback
-from utils import (
-    create_and_prepare_model,
-    create_datasets,
-    save_peft_deepspeed_ckpt,
-    SaveDeepSpeedPeftModelCallback,
-)
+from utils import create_and_prepare_model, create_datasets
 
 ########################################################################
 # This is a fully working simple example to use trl's RewardTrainer.
@@ -141,23 +135,12 @@ def main(model_args, data_args, training_args):
     if model_args.use_peft_lora:
         trainer.model.print_trainable_parameters()
 
-    if is_deepspeed_peft_enabled:
-        for callback in trainer.callbacks:
-            if isinstance(callback, PeftSavingCallback):
-                trainer.remove_callback(callback)
-        trainer.add_callback(
-            SaveDeepSpeedPeftModelCallback(trainer, save_steps=training_args.save_steps)
-        )
-
     # train
     trainer.train()
 
     # saving final model
     if trainer.is_fsdp_enabled:
         trainer.accelerator.state.fsdp_plugin.set_state_dict_type("FULL_STATE_DICT")
-
-    if is_deepspeed_peft_enabled:
-        save_peft_deepspeed_ckpt(trainer, training_args.output_dir)
     trainer.save_model()
 
 
