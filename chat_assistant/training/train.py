@@ -14,11 +14,12 @@
 # limitations under the License.
 from dataclasses import dataclass, field
 import os
-import subprocess
+import sys
 from typing import Optional
 
-from transformers import HfArgumentParser, TrainingArguments, Trainer
-from utils import *
+from transformers import HfArgumentParser, TrainingArguments
+from trl import SFTTrainer
+from utils import create_and_prepare_model, create_datasets
 
 ########################################################################
 # This is a fully working simple example to use trl's RewardTrainer.
@@ -32,21 +33,16 @@ from utils import *
 
 # Define and parse arguments.
 @dataclass
-class ScriptArguments:
+class ModelArguments:
     """
-    These arguments vary depending on how many GPUs you have, what their capacity and features are, and what size model you want to train.
+    Arguments pertaining to which model/config/tokenizer we are going to fine-tune from.
     """
 
-    local_rank: Optional[int] = field(
-        default=-1, metadata={"help": "Used for multi-gpu"}
+    model_name_or_path: str = field(
+        metadata={
+            "help": "Path to pretrained model or model identifier from huggingface.co/models"
+        }
     )
-
-    per_device_train_batch_size: Optional[int] = field(default=4)
-    per_device_eval_batch_size: Optional[int] = field(default=1)
-    gradient_accumulation_steps: Optional[int] = field(default=4)
-    learning_rate: Optional[float] = field(default=2e-4)
-    max_grad_norm: Optional[float] = field(default=0.3)
-    weight_decay: Optional[float] = field(default=0.001)
     lora_alpha: Optional[int] = field(default=16)
     lora_dropout: Optional[float] = field(default=0.1)
     lora_r: Optional[int] = field(default=64)
@@ -55,17 +51,6 @@ class ScriptArguments:
         metadata={
             "help": "comma separated list of target modules to apply LoRA layers to"
         },
-    )
-    max_seq_length: Optional[int] = field(default=512)
-    model_name: Optional[str] = field(
-        default="Salesforce/codegen25-7b-multi",
-        metadata={
-            "help": "The model that you want to train from the Hugging Face hub. E.g. gpt2, gpt2-xl, bert, etc."
-        },
-    )
-    dataset_name: Optional[str] = field(
-        default="timdettmers/openassistant-guanaco",
-        metadata={"help": "The preference dataset to use."},
     )
     use_nested_quant: Optional[bool] = field(
         default=False,
@@ -78,52 +63,6 @@ class ScriptArguments:
     bnb_4bit_quant_type: Optional[str] = field(
         default="nf4",
         metadata={"help": "Quantization type fp4 or nf4"},
-    )
-    num_train_epochs: Optional[int] = field(
-        default=1,
-        metadata={"help": "The number of training epochs for the reward model."},
-    )
-    fp16: Optional[bool] = field(
-        default=False,
-        metadata={"help": "Enables fp16 training."},
-    )
-    bf16: Optional[bool] = field(
-        default=False,
-        metadata={"help": "Enables bf16 training."},
-    )
-    packing: Optional[bool] = field(
-        default=False,
-        metadata={"help": "Use packing dataset creating."},
-    )
-    gradient_checkpointing: Optional[bool] = field(
-        default=True,
-        metadata={"help": "Enables gradient checkpointing."},
-    )
-    optim: Optional[str] = field(
-        default="paged_adamw_32bit",
-        metadata={"help": "The optimizer to use."},
-    )
-    lr_scheduler_type: str = field(
-        default="constant",
-        metadata={
-            "help": "Learning rate schedule. Constant a bit better than cosine, and has advantage for analysis"
-        },
-    )
-    max_steps: int = field(
-        default=10000, metadata={"help": "How many optimizer update steps to take"}
-    )
-    warmup_ratio: float = field(
-        default=0.03, metadata={"help": "Fraction of steps to do a warmup for"}
-    )
-    save_steps: int = field(
-        default=10, metadata={"help": "Save checkpoint every X updates steps."}
-    )
-    eval_steps: int = field(default=10, metadata={"help": "Eval model every X steps."})
-    logging_steps: int = field(
-        default=10, metadata={"help": "Log every X updates steps."}
-    )
-    output_dir: str = field(
-        default="results", metadata={"help": "Where to store the final model."}
     )
     use_flash_attn: Optional[bool] = field(
         default=False,
@@ -141,21 +80,23 @@ class ScriptArguments:
         default=False,
         metadata={"help": "Enables loading model in 4bit."},
     )
-    use_gradient_checkpointing: Optional[bool] = field(
+
+
+@dataclass
+class DataTrainingArguments:
+    dataset_name: Optional[str] = field(
+        default="timdettmers/openassistant-guanaco",
+        metadata={"help": "The preference dataset to use."},
+    )
+    packing: Optional[bool] = field(
         default=False,
-        metadata={"help": "Enables Gradient Checkpointing."},
+        metadata={"help": "Use packing dataset creating."},
     )
     dataset_text_field: str = field(
         default="text", metadata={"help": "Dataset field to use as input text."}
     )
-    push_to_hub: Optional[bool] = field(
-        default=False,
-        metadata={"help": "If True, pushes the model to the HF Hub"},
-    )
-    num_workers: int = field(
-        default=4, metadata={"help": "Number of dataset workers to use."}
-    )
-    debug: Optional[bool] = field(
+    max_seq_length: Optional[int] = field(default=512)
+    append_concat_token: Optional[bool] = field(
         default=False,
         metadata={
             "help": "If True, tests things like proper saving/loading/logging of model"
@@ -163,61 +104,36 @@ class ScriptArguments:
     )
 
 
-def main(args):
+def main(model_args, data_args, training_args):
     # training arguments
     is_deepspeed_peft_enabled = (
         os.environ.get("ACCELERATE_USE_DEEPSPEED", "False").lower() == "true"
-        and args.use_peft_lora
+        and model_args.use_peft_lora
     )
-    save_strategy = "no" if is_deepspeed_peft_enabled else "steps"
-    training_arguments = TrainingArguments(
-        output_dir=args.output_dir,
-        per_device_train_batch_size=args.per_device_train_batch_size,
-        gradient_accumulation_steps=args.gradient_accumulation_steps,
-        optim=args.optim,
-        learning_rate=args.learning_rate,
-        fp16=args.fp16,
-        bf16=args.bf16,
-        max_grad_norm=args.max_grad_norm,
-        warmup_ratio=args.warmup_ratio,
-        lr_scheduler_type=args.lr_scheduler_type,
-        num_train_epochs=args.num_train_epochs,
-        evaluation_strategy="steps",
-        save_strategy=save_strategy,
-        max_steps=args.max_steps,
-        eval_steps=args.eval_steps,
-        save_steps=args.save_steps,
-        logging_steps=args.logging_steps,
-        push_to_hub=args.push_to_hub,
-        gradient_checkpointing=args.use_gradient_checkpointing,
-        include_tokens_per_second=True,
-    )
+    if is_deepspeed_peft_enabled and "steps".upper() not in str(
+        training_args.save_strategy
+    ):
+        raise ValueError("When using DeepSpeed+PEFT, use the 'steps' save_strategy.")
 
     # model
-    model, peft_config, tokenizer = create_and_prepare_model(args)
-    model.config.use_cache = False
+    model, peft_config, tokenizer = create_and_prepare_model(model_args)
+    model.config.use_cache = training_args.gradient_checkpointing
 
     # datasets
-    train_dataset, eval_dataset = create_datasets(tokenizer, args)
+    train_dataset, eval_dataset = create_datasets(tokenizer, data_args, training_args)
 
     # trainer
-    trainer = Trainer(
+    trainer = SFTTrainer(
         model=model,
-        args=training_arguments,
+        args=training_args,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
+        peft_config=peft_config,
+        packing=data_args.packing,
     )
     trainer.accelerator.print(f"{trainer.model}")
-    if args.use_peft_lora:
+    if model_args.use_peft_lora:
         trainer.model.print_trainable_parameters()
-
-    if is_deepspeed_peft_enabled:
-        trainer.add_callback(
-            SaveDeepSpeedPeftModelCallback(trainer, save_steps=args.save_steps)
-        )
-
-    if args.use_peft_lora:
-        peft_module_casting_to_bf16(trainer.model, args)
 
     # train
     trainer.train()
@@ -225,28 +141,19 @@ def main(args):
     # saving final model
     if trainer.is_fsdp_enabled:
         trainer.accelerator.state.fsdp_plugin.set_state_dict_type("FULL_STATE_DICT")
-
-    if is_deepspeed_peft_enabled:
-        trainer.accelerator.wait_for_everyone()
-        state_dict = trainer.accelerator.get_state_dict(trainer.deepspeed)
-        unwrapped_model = trainer.accelerator.unwrap_model(trainer.deepspeed)
-        if trainer.accelerator.is_main_process:
-            unwrapped_model.save_pretrained(args.output_dir, state_dict=state_dict)
-        trainer.accelerator.wait_for_everyone()
-    else:
-        if args.push_to_hub:
-            trainer.push_to_hub()
-            if args.use_peft_lora:
-                trainer.model.push_to_hub(args.output_dir)
-        else:
-            tokenizer.save_pretrained(args.output_dir)
-            trainer.save_model(args.output_dir)
-    trainer.accelerator.print(f"Model saved to {args.output_dir}")
-    if args.push_to_hub:
-        trainer.model.push_to_hub(args.output_dir)
+    trainer.save_model()
 
 
 if __name__ == "__main__":
-    parser = HfArgumentParser(ScriptArguments)
-    args = parser.parse_args_into_dataclasses()[0]
-    main(args)
+    parser = HfArgumentParser(
+        (ModelArguments, DataTrainingArguments, TrainingArguments)
+    )
+    if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
+        # If we pass only one argument to the script and it's the path to a json file,
+        # let's parse it to get our arguments.
+        model_args, data_args, training_args = parser.parse_json_file(
+            json_file=os.path.abspath(sys.argv[1])
+        )
+    else:
+        model_args, data_args, training_args = parser.parse_args_into_dataclasses()
+    main(model_args, data_args, training_args)
