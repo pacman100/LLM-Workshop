@@ -159,6 +159,7 @@ def main(model_args, data_args, training_args):
             "append_concat_token": data_args.append_concat_token,
             "add_special_tokens": data_args.add_special_tokens,
         },
+        dataset_text_field=data_args.dataset_text_field,
     )
     trainer.accelerator.print(f"{trainer.model}")
     if model_args.use_peft_lora:
