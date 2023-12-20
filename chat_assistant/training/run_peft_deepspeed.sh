@@ -1,4 +1,4 @@
-accelerate launch --config_file "configs/deepspeed_config.yaml"  train.py \
+accelerate launch --config_file "configs/deepspeed_zeropp_lora_config.yaml"  train.py \
 --seed 100 \
 --model_name "mistralai/Mistral-7B-v0.1" \
 --dataset_name "HuggingFaceH4/ultrachat_200k" \
@@ -18,15 +18,23 @@ accelerate launch --config_file "configs/deepspeed_config.yaml"  train.py \
 --hub_strategy "every_save" \
 --bf16 True \
 --packing True \
---learning_rate 2e-5 \
+--learning_rate 1e-4 \
 --lr_scheduler_type "cosine" \
 --weight_decay 1e-4 \
 --warmup_ratio 0.10 \
 --max_grad_norm 1.0 \
---output_dir "mistral-sft-ds" \
+--output_dir "mistral-sft-lora-ds" \
 --per_device_train_batch_size 1 \
 --gradient_accumulation_steps 2 \
 --gradient_checkpointing True \
 --use_reentrant False \
 --dataset_text_field "content" \
---use_flash_attn True
+--use_flash_attn True \
+--use_peft_lora True \
+--lora_r 8 \
+--lora_alpha 16 \
+--lora_dropout 0.1 \
+--lora_target_modules "q_proj,k_proj,v_proj,o_proj,down_proj,up_proj,gate_proj,embed_tokens,lm_head" \
+--use_4bit_qunatization True \
+--use_nested_quant True \
+--bnb_4bit_compute_dtype "bfloat16"

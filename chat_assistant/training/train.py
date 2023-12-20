@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 import os
 import sys
 from typing import Optional
+from transformers import set_seed
 
 from transformers import HfArgumentParser, TrainingArguments
 from trl import SFTTrainer
@@ -42,6 +43,12 @@ class ModelArguments:
         metadata={
             "help": "Path to pretrained model or model identifier from huggingface.co/models"
         }
+    )
+    chat_template_format: Optional[str] = field(
+        default="none",
+        metadata={
+            "help": "chatml|zephyr|none. Pass `none` if the dataset is already formatted with the chat template."
+        },
     )
     lora_alpha: Optional[int] = field(default=16)
     lora_dropout: Optional[float] = field(default=0.1)
@@ -80,6 +87,10 @@ class ModelArguments:
         default=False,
         metadata={"help": "Enables loading model in 4bit."},
     )
+    use_reentrant: Optional[bool] = field(
+        default=False,
+        metadata={"help": "Gradient Checkpointing param. Refer the related docs"},
+    )
 
 
 @dataclass
@@ -99,28 +110,42 @@ class DataTrainingArguments:
     append_concat_token: Optional[bool] = field(
         default=False,
         metadata={
-            "help": "If True, tests things like proper saving/loading/logging of model"
+            "help": "If True, appends `eos_token_id` at the end of each sample being packed."
         },
+    )
+    add_special_tokens: Optional[bool] = field(
+        default=False,
+        metadata={
+            "help": "If True, tokenizers adds special tokens to each sample being packed."
+        },
+    )
+    splits: Optional[str] = field(
+        default="train,test",
+        metadata={"help": "Comma separate list of the splits to use from the dataset."},
     )
 
 
 def main(model_args, data_args, training_args):
-    # training arguments
-    is_deepspeed_peft_enabled = (
-        os.environ.get("ACCELERATE_USE_DEEPSPEED", "False").lower() == "true"
-        and model_args.use_peft_lora
-    )
-    if is_deepspeed_peft_enabled and "steps".upper() not in str(
-        training_args.save_strategy
-    ):
-        raise ValueError("When using DeepSpeed+PEFT, use the 'steps' save_strategy.")
+    # Set seed for reproducibility
+    set_seed(training_args.seed)
 
     # model
     model, peft_config, tokenizer = create_and_prepare_model(model_args)
+
+    # gradient ckpt
     model.config.use_cache = training_args.gradient_checkpointing
+    if training_args.gradient_checkpointing:
+        training_args.gradient_checkpointing_kwargs = {
+            "use_reentrant": model_args.use_reentrant
+        }
 
     # datasets
-    train_dataset, eval_dataset = create_datasets(tokenizer, data_args, training_args)
+    train_dataset, eval_dataset = create_datasets(
+        tokenizer,
+        data_args,
+        training_args,
+        apply_chat_template=model_args.chat_template_format != "none",
+    )
 
     # trainer
     trainer = SFTTrainer(
@@ -130,6 +155,10 @@ def main(model_args, data_args, training_args):
         eval_dataset=eval_dataset,
         peft_config=peft_config,
         packing=data_args.packing,
+        dataset_kwargs={
+            "append_concat_token": data_args.append_concat_token,
+            "add_special_tokens": data_args.add_special_tokens,
+        },
     )
     trainer.accelerator.print(f"{trainer.model}")
     if model_args.use_peft_lora:

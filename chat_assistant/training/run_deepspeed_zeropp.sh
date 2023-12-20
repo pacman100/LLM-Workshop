@@ -1,4 +1,4 @@
-accelerate launch --config_file "configs/deepspeed_config.yaml"  train.py \
+accelerate launch --config_file "configs/deepspeed_zeropp_config.yaml"  train.py \
 --seed 100 \
 --model_name "mistralai/Mistral-7B-v0.1" \
 --dataset_name "HuggingFaceH4/ultrachat_200k" \
@@ -23,8 +23,8 @@ accelerate launch --config_file "configs/deepspeed_config.yaml"  train.py \
 --weight_decay 1e-4 \
 --warmup_ratio 0.10 \
 --max_grad_norm 1.0 \
---output_dir "mistral-sft-ds" \
---per_device_train_batch_size 1 \
+--output_dir "mistral-sft-ds-zpp" \
+--per_device_train_batch_size 8 \
 --gradient_accumulation_steps 2 \
 --gradient_checkpointing True \
 --use_reentrant False \
