@@ -1,5 +1,5 @@
 {
-    "fp16": {
+    "bf16": {
         "enabled": true
     },
     "zero_optimization": {
@@ -7,7 +7,6 @@
         "overlap_comm": true,
         "contiguous_gradients": true,
         "zero_hpz_partition_size": 8,
-        "zero_quantized_weights": true,
         "zero_quantized_gradients": true,
         "reduce_bucket_size": 10000000,
         "reduce_scatter": true,

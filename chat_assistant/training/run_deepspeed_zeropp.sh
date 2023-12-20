@@ -16,7 +16,7 @@ accelerate launch --config_file "configs/deepspeed_zeropp_config.yaml"  train.py
 --push_to_hub \
 --hub_private_repo True \
 --hub_strategy "every_save" \
---fp16 True \
+--bf16 True \
 --packing True \
 --learning_rate 5e-6 \
 --lr_scheduler_type "cosine" \
