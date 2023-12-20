@@ -24,7 +24,7 @@ accelerate launch --config_file "configs/fsdp_config.yaml"  train.py \
 --warmup_ratio 0.1 \
 --max_grad_norm 1.0 \
 --output_dir "mistral-sft-fsdp" \
---per_device_train_batch_size 6 \
+--per_device_train_batch_size 4 \
 --gradient_accumulation_steps 1 \
 --gradient_checkpointing False \
 --dataset_text_field "content" \
