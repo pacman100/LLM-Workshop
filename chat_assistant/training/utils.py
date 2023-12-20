@@ -53,12 +53,7 @@ def create_datasets(tokenizer, data_args, training_args, apply_chat_template=Fal
     for split in data_args.splits.split(","):
         try:
             # Try first if dataset on a Hub repo
-            dataset = load_dataset(
-                data_args.dataset_name,
-                split=split,
-                use_auth_token=True,
-                num_proc=training_args.dataloader_num_workers,
-            )
+            dataset = load_dataset(data_args.dataset_name, split=split)
         except DatasetGenerationError:
             # If not, check local dataset
             dataset = load_from_disk(os.path.join(data_args.dataset_name, split))
