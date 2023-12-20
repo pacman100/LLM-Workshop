@@ -152,7 +152,7 @@ def create_and_prepare_model(args):
         )
         tokenizer.chat_template = chat_template
         # make embedding resizing configurable?
-        model.resize_token_embeddings(len(tokenizer))
+        model.resize_token_embeddings(len(tokenizer), pad_to_multiple_of=8)
     else:
         tokenizer = AutoTokenizer.from_pretrained(
             args.model_name_or_path, trust_remote_code=True
