@@ -16,7 +16,7 @@ accelerate launch --config_file "configs/deepspeed_config.yaml"  train.py \
 --push_to_hub \
 --hub_private_repo True \
 --hub_strategy "every_save" \
---bf16 True \
+--fp16 True \
 --packing True \
 --learning_rate 2e-5 \
 --lr_scheduler_type "cosine" \
