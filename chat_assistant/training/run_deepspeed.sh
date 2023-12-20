@@ -21,11 +21,11 @@ accelerate launch --config_file "configs/deepspeed_config.yaml"  train.py \
 --learning_rate 2e-5 \
 --lr_scheduler_type "cosine" \
 --weight_decay 1e-4 \
---warmup_ratio 0.01 \
+--warmup_ratio 0.0 \
 --max_grad_norm 1.0 \
 --output_dir "mistral-sft-ds" \
---per_device_train_batch_size 4 \
---gradient_accumulation_steps 8 \
+--per_device_train_batch_size 2 \
+--gradient_accumulation_steps 16 \
 --gradient_checkpointing False \
 --dataset_text_field "content" \
 --use_flash_attn True
