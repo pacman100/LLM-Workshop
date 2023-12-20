@@ -7,7 +7,7 @@ accelerate launch --config_file "configs/deepspeed_zeropp_lora_config.yaml"  tra
 --append_concat_token False \
 --splits "train_sft,test_sft" \
 --max_seq_len 2048 \
---num_epochs 1 \
+--num_train_epochs 1 \
 --logging_steps 5 \
 --log_level "info" \
 --logging_strategy "steps" \
