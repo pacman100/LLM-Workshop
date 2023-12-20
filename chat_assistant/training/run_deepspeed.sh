@@ -27,6 +27,6 @@ accelerate launch --config_file "configs/deepspeed_config.yaml"  train.py \
 --per_device_train_batch_size 16 \
 --gradient_accumulation_steps 4 \
 --gradient_checkpointing True \
---use_reentrant False
+--use_reentrant False \
 --dataset_text_field "content" \
 --use_flash_attn True
