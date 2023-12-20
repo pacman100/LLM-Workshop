@@ -24,8 +24,8 @@ python train.py \
 --warmup_ratio 0.10 \
 --max_grad_norm 1.0 \
 --output_dir "mistral-sft-lora" \
---per_device_train_batch_size 8 \
---gradient_accumulation_steps 2 \
+--per_device_train_batch_size 16 \
+--gradient_accumulation_steps 1 \
 --gradient_checkpointing True \
 --use_reentrant False \
 --dataset_text_field "content" \
