@@ -34,6 +34,7 @@ class ChatmlSpecialTokens(str, Enum):
     assistant = "<|im_start|>assistant"
     system = "<|im_start|>system"
     eos_token = "<|im_end|>"
+    bos_token = "<s>"
     pad_token = "<pad>"
 
     @classmethod
