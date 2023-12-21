@@ -7,7 +7,6 @@
         "overlap_comm": true,
         "contiguous_gradients": true,
         "zero_hpz_partition_size": 8,
-        "zero_quantized_gradients": true,
         "reduce_bucket_size": 10000000,
         "reduce_scatter": true,
         "stage3_gather_16bit_weights_on_model_save": true
