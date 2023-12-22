@@ -1,7 +1,7 @@
 git+https://github.com/huggingface/transformers
 git+https://github.com/huggingface/accelerate
 git+https://github.com/huggingface/peft
-trl
+git+https://github.com/huggingface/trl
 huggingface-hub
 evaluate
 datasets
