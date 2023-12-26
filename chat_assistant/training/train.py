@@ -181,7 +181,7 @@ def main(model_args, data_args, training_args):
                 "mixed_precision": fsdp_plugin.mixed_precision_policy,
                 "sync_module_states": fsdp_plugin.sync_module_states,
                 "use_orig_params": False,
-                "limit_all_gathers": True,
+                "limit_all_gathers": False,
                 "param_init_fn": fsdp_plugin.param_init_fn,
                 "device_id": trainer.accelerator.device,
             }
