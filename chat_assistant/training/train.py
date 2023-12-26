@@ -146,6 +146,7 @@ def main(model_args, data_args, training_args):
             "use_reentrant": model_args.use_reentrant
         }
     training_args.torch_compile = model_args.lora_fast_train_mode
+    print(training_args.torch_compile)
 
     # datasets
     train_dataset, eval_dataset = create_datasets(
