@@ -175,6 +175,8 @@ def main(model_args, data_args, training_args):
     trainer.accelerator.print(f"{trainer.model}")
     if model_args.use_peft_lora:
         trainer.model.print_trainable_parameters()
+    trainer.accelerator.print(f"{trainer.accelerator.state.dynamo_plugin}")
+    return
 
     # train
     trainer.train()
