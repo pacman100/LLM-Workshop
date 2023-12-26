@@ -177,6 +177,7 @@ def main(model_args, data_args, training_args):
 
     # train
     trainer.train()
+    trainer.accelerator.print(f"{trainer.model}")
 
     # saving final model
     if trainer.is_fsdp_enabled:
