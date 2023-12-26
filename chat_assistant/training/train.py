@@ -187,7 +187,7 @@ def main(model_args, data_args, training_args):
                 "param_init_fn": fsdp_plugin.param_init_fn,
                 "device_id": trainer.accelerator.device,
             }
-            trainer.model = FSDP(trainer.model, **kwargs)
+            trainer.model = trainer.model_wrapped = FSDP(trainer.model, **kwargs)
             trainer.accelerator.print(f"{trainer.model}")
             trainer.args.remove_unused_columns = False
 
