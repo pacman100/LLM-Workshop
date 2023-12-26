@@ -130,6 +130,7 @@ def create_and_prepare_model(args):
             bias="none",
             task_type="CAUSAL_LM",
             target_modules=args.lora_target_modules.split(","),
+            fast_train_mode=args.lora_fast_train_mode,
         )
 
     special_tokens = None

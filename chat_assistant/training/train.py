@@ -59,6 +59,13 @@ class ModelArguments:
             "help": "comma separated list of target modules to apply LoRA layers to"
         },
     )
+    lora_fast_train_mode: Optional[bool] = field(
+        default=False,
+        metadata={
+            "help": "If this is True, then the model will use specialized layers for faster training, especially in conjunction "
+            "with torch.compile."
+        },
+    )
     use_nested_quant: Optional[bool] = field(
         default=False,
         metadata={"help": "Activate nested quantization for 4bit base models"},
@@ -138,6 +145,7 @@ def main(model_args, data_args, training_args):
         training_args.gradient_checkpointing_kwargs = {
             "use_reentrant": model_args.use_reentrant
         }
+    training_args.torch_compile = model_args.lora_fast_train_mode
 
     # datasets
     train_dataset, eval_dataset = create_datasets(
