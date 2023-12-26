@@ -109,7 +109,11 @@ def create_and_prepare_model(args):
                 print("=" * 80)
 
     if args.use_4bit_qunatization or args.use_8bit_qunatization:
-        device_map = "auto"  # {"": 0}
+        device_map = (
+            int(os.environ.get("LOCAL_RANK", -1))
+            if torch.distributed.is_available() and torch.distributed.is_initialized()
+            else "auto"
+        )  # {"": 0}
 
     model = AutoModelForCausalLM.from_pretrained(
         args.model_name_or_path,
