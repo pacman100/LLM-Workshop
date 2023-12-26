@@ -145,8 +145,6 @@ def main(model_args, data_args, training_args):
         training_args.gradient_checkpointing_kwargs = {
             "use_reentrant": model_args.use_reentrant
         }
-    training_args.torch_compile = model_args.lora_fast_train_mode
-    print(training_args.torch_compile)
 
     # datasets
     train_dataset, eval_dataset = create_datasets(
@@ -176,7 +174,6 @@ def main(model_args, data_args, training_args):
     if model_args.use_peft_lora:
         trainer.model.print_trainable_parameters()
     trainer.accelerator.print(f"{trainer.accelerator.state.dynamo_plugin}")
-    return
 
     # train
     trainer.train()
