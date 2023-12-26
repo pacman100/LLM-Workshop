@@ -173,6 +173,8 @@ def main(model_args, data_args, training_args):
     trainer.accelerator.print(f"{trainer.model}")
     if model_args.use_peft_lora:
         trainer.model.print_trainable_parameters()
+        if model_args.lora_fast_train_mode:
+            trainer.model = trainer.model.base_model
     trainer.accelerator.print(f"{trainer.accelerator.state.dynamo_plugin}")
 
     # train
