@@ -175,15 +175,14 @@ def main(model_args, data_args, training_args):
 
             fsdp_plugin = trainer.accelerator.state.fsdp_plugin
             auto_wrap_policy = fsdp_auto_wrap_policy(trainer.model)
-            fsdp_plugin.set_auto_wrap_policy(trainer.model)
             kwargs = {
                 "sharding_strategy": fsdp_plugin.sharding_strategy,
                 "cpu_offload": fsdp_plugin.cpu_offload,
-                "auto_wrap_policy": auto_wrap_policy,  # fsdp_plugin.auto_wrap_policy,
+                "auto_wrap_policy": auto_wrap_policy,
                 "mixed_precision": fsdp_plugin.mixed_precision_policy,
                 "sync_module_states": fsdp_plugin.sync_module_states,
-                "use_orig_params": False,
-                "limit_all_gathers": False,
+                "use_orig_params": False,  # this should be `False`
+                "limit_all_gathers": True,
                 "param_init_fn": fsdp_plugin.param_init_fn,
                 "device_id": trainer.accelerator.device,
             }
