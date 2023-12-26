@@ -34,6 +34,4 @@ accelerate launch --config_file "configs/deepspeed_zeropp_lora_config.yaml"  tra
 --lora_alpha 16 \
 --lora_dropout 0.1 \
 --lora_target_modules "q_proj,k_proj,v_proj,o_proj,down_proj,up_proj,gate_proj,embed_tokens,lm_head" \
---use_4bit_qunatization True \
---use_nested_quant True \
---bnb_4bit_compute_dtype "bfloat16"
+--use_4bit_qunatization False
