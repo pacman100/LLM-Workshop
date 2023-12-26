@@ -187,7 +187,6 @@ def main(model_args, data_args, training_args):
                 "device_id": trainer.accelerator.device,
             }
             trainer.model = trainer.model_wrapped = FSDP(trainer.model, **kwargs)
-            trainer.accelerator.print(f"{trainer.model}")
             trainer.args.remove_unused_columns = False
 
     # train
