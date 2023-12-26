@@ -166,6 +166,7 @@ def main(model_args, data_args, training_args):
     trainer.accelerator.print(f"{trainer.model}")
     if model_args.use_peft_lora:
         # handle PEFT+FSDP case
+        trainer.model.print_trainable_parameters()
         if getattr(trainer.accelerator.state, "fsdp_plugin", None):
             from peft.utils.other import fsdp_auto_wrap_policy
             from torch.distributed.fsdp import (
@@ -188,7 +189,6 @@ def main(model_args, data_args, training_args):
             trainer.model = FSDP(trainer.model, **kwargs)
             trainer.accelerator.print(f"{trainer.model}")
             trainer.args.remove_unused_columns = False
-        trainer.model.print_trainable_parameters()
 
     # train
     trainer.train()
