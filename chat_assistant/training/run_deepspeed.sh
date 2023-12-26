@@ -25,6 +25,7 @@ accelerate launch --config_file "configs/deepspeed_config.yaml"  train.py \
 --max_grad_norm 1.0 \
 --output_dir "mistral-sft-ds" \
 --per_device_train_batch_size 16 \
+--per_device_eval_batch_size 16 \
 --gradient_accumulation_steps 4 \
 --gradient_checkpointing True \
 --use_reentrant False \
