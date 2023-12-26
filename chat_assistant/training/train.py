@@ -167,29 +167,29 @@ def main(model_args, data_args, training_args):
     if model_args.use_peft_lora:
         # handle PEFT+FSDP case
         trainer.model.print_trainable_parameters()
-        # if getattr(trainer.accelerator.state, "fsdp_plugin", None):
-        #     from peft.utils.other import fsdp_auto_wrap_policy
-        #     from torch.distributed.fsdp import (
-        #         FullyShardedDataParallel as FSDP,
-        #     )
+        if getattr(trainer.accelerator.state, "fsdp_plugin", None):
+            from peft.utils.other import fsdp_auto_wrap_policy
+            from torch.distributed.fsdp import (
+                FullyShardedDataParallel as FSDP,
+            )
 
-        #     fsdp_plugin = trainer.accelerator.state.fsdp_plugin
-        #     # auto_wrap_policy = fsdp_auto_wrap_policy(trainer.model)
-        #     fsdp_plugin.set_auto_wrap_policy(trainer.model)
-        #     kwargs = {
-        #         "sharding_strategy": fsdp_plugin.sharding_strategy,
-        #         "cpu_offload": fsdp_plugin.cpu_offload,
-        #         "auto_wrap_policy": fsdp_plugin.auto_wrap_policy,
-        #         "mixed_precision": fsdp_plugin.mixed_precision_policy,
-        #         "sync_module_states": fsdp_plugin.sync_module_states,
-        #         "use_orig_params": True,
-        #         "limit_all_gathers": False,
-        #         "param_init_fn": fsdp_plugin.param_init_fn,
-        #         "device_id": trainer.accelerator.device,
-        #     }
-        #     trainer.model = FSDP(trainer.model, **kwargs)
-        #     trainer.accelerator.print(f"{trainer.model}")
-        #     trainer.args.remove_unused_columns = False
+            fsdp_plugin = trainer.accelerator.state.fsdp_plugin
+            # auto_wrap_policy = fsdp_auto_wrap_policy(trainer.model)
+            fsdp_plugin.set_auto_wrap_policy(trainer.model)
+            kwargs = {
+                "sharding_strategy": fsdp_plugin.sharding_strategy,
+                "cpu_offload": fsdp_plugin.cpu_offload,
+                "auto_wrap_policy": fsdp_plugin.auto_wrap_policy,
+                "mixed_precision": fsdp_plugin.mixed_precision_policy,
+                "sync_module_states": fsdp_plugin.sync_module_states,
+                "use_orig_params": False,
+                "limit_all_gathers": False,
+                "param_init_fn": fsdp_plugin.param_init_fn,
+                "device_id": trainer.accelerator.device,
+            }
+            trainer.model = FSDP(trainer.model, **kwargs)
+            trainer.accelerator.print(f"{trainer.model}")
+            trainer.args.remove_unused_columns = False
 
     # train
     trainer.train()
