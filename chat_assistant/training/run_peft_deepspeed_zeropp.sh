@@ -1,4 +1,4 @@
-accelerate launch --config_file "configs/deepspeed_config.yaml"  train.py \
+accelerate launch --config_file "configs/deepspeed_zeropp_lora_config.yaml"  train.py \
 --seed 100 \
 --model_name "mistralai/Mistral-7B-v0.1" \
 --dataset_name "HuggingFaceH4/ultrachat_200k" \
