@@ -75,12 +75,12 @@ def get_args():
 
     parser.add_argument("--use_flash_attn", action="store_true")
 
-    parser.add_argument("--use_4bit_qunatization", action="store_true")
+    parser.add_argument("--use_4bit_quantization", action="store_true")
     parser.add_argument("--use_nested_quant", action="store_true")
     parser.add_argument("--bnb_4bit_quant_type", type=str, default="nf4")
     parser.add_argument("--bnb_4bit_compute_dtype", type=str, default="float16")
 
-    parser.add_argument("--use_8bit_qunatization", action="store_true")
+    parser.add_argument("--use_8bit_quantization", action="store_true")
 
     parser.add_argument("--push_to_hub", action="store_true")
 
@@ -255,19 +255,19 @@ def create_and_prepare_model(args):
     device_map = None
     bnb_config = None
 
-    load_in_8bit = args.use_8bit_qunatization
+    load_in_8bit = args.use_8bit_quantization
 
-    if args.use_4bit_qunatization:
+    if args.use_4bit_quantization:
         compute_dtype = getattr(torch, args.bnb_4bit_compute_dtype)
 
         bnb_config = BitsAndBytesConfig(
-            load_in_4bit=args.use_4bit_qunatization,
+            load_in_4bit=args.use_4bit_quantization,
             bnb_4bit_quant_type=args.bnb_4bit_quant_type,
             bnb_4bit_compute_dtype=compute_dtype,
             bnb_4bit_use_double_quant=args.use_nested_quant,
         )
 
-        if compute_dtype == torch.float16 and args.use_4bit_qunatization:
+        if compute_dtype == torch.float16 and args.use_4bit_quantization:
             major, _ = torch.cuda.get_device_capability()
             if major >= 8:
                 print("=" * 80)
@@ -276,7 +276,7 @@ def create_and_prepare_model(args):
                 )
                 print("=" * 80)
 
-    if args.use_4bit_qunatization or args.use_8bit_qunatization:
+    if args.use_4bit_quantization or args.use_8bit_quantization:
         device_map = {"": 0}
 
     model = AutoModelForCausalLM.from_pretrained(
@@ -291,7 +291,7 @@ def create_and_prepare_model(args):
     )
 
     if (
-        args.use_4bit_qunatization or args.use_8bit_qunatization
+        args.use_4bit_quantization or args.use_8bit_quantization
     ) and args.use_peft_lora:
         model = prepare_model_for_kbit_training(
             model, use_gradient_checkpointing=args.no_gradient_checkpointing

@@ -79,11 +79,11 @@ class ModelArguments:
         default=False,
         metadata={"help": "Enables PEFT LoRA for training."},
     )
-    use_8bit_qunatization: Optional[bool] = field(
+    use_8bit_quantization: Optional[bool] = field(
         default=False,
         metadata={"help": "Enables loading model in 8bit."},
     )
-    use_4bit_qunatization: Optional[bool] = field(
+    use_4bit_quantization: Optional[bool] = field(
         default=False,
         metadata={"help": "Enables loading model in 4bit."},
     )
