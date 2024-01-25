@@ -1,6 +1,6 @@
 accelerate launch --config_file "configs/deepspeed_config.yaml"  train.py \
 --seed 100 \
---model_name "mistralai/Mistral-7B-v0.1" \
+--model_name_or_path "mistralai/Mistral-7B-v0.1" \
 --dataset_name "HuggingFaceH4/ultrachat_200k" \
 --chat_template_format "chatml" \
 --add_special_tokens False \
