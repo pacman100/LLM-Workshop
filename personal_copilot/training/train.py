@@ -2,89 +2,109 @@
 Fine-Tune StarCoder on code/text dataset
 """
 
-import argparse
 import os
 import random
-import subprocess
-import warnings
+import sys
+from typing import Optional
+from dataclasses import dataclass, field
 
 import numpy as np
 import torch
 from datasets import load_dataset
 from torch.utils.data import IterableDataset
-from torch.utils.data.dataloader import DataLoader
 from tqdm import tqdm
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
     Trainer,
     TrainingArguments,
-    logging,
+    HfArgumentParser,
     set_seed,
     BitsAndBytesConfig,
 )
 
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
-from peft.tuners.lora import LoraLayer
 
 import fim
 
 
-def get_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model_path", type=str, default="bigcode/starcoderplus")
-    parser.add_argument("--dataset_name", type=str, default="smangrul/hf-stack-v1")
-    parser.add_argument("--subset", type=str, default="data")
-    parser.add_argument("--split", type=str, default="train")
-    parser.add_argument("--size_valid_set", type=int, default=4000)
-    parser.add_argument("--test_size", type=float, default=0.005)
-    parser.add_argument("--streaming", action="store_true")
-    parser.add_argument("--shuffle_buffer", type=int, default=5000)
-    parser.add_argument("--data_column", type=str, default="content")
+# Define and parse arguments.
+@dataclass
+class ModelArguments:
+    """
+    Arguments pertaining to which model/config/tokenizer we are going to fine-tune from.
+    """
 
-    parser.add_argument("--seq_length", type=int, default=8192)
-    parser.add_argument("--max_steps", type=int, default=10000)
-    parser.add_argument("--batch_size", type=int, default=2)
-    parser.add_argument("--gradient_accumulation_steps", type=int, default=8)
-    parser.add_argument("--eos_token_id", type=int, default=49152)
+    model_name_or_path: str = field(
+        metadata={
+            "help": "Path to pretrained model or model identifier from huggingface.co/models"
+        }
+    )
+    tokenizer_model_name_or_path: str = field(
+        metadata={
+            "help": "Path to pretrained model or model identifier from huggingface.co/models"
+        }
+    )
+    lora_alpha: Optional[int] = field(default=16)
+    lora_dropout: Optional[float] = field(default=0.1)
+    lora_r: Optional[int] = field(default=64)
+    lora_target_modules: Optional[str] = field(
+        default="q_proj,k_proj,v_proj,o_proj,down_proj,up_proj,gate_proj",
+        metadata={
+            "help": "comma separated list of target modules to apply LoRA layers to"
+        },
+    )
+    use_nested_quant: Optional[bool] = field(
+        default=False,
+        metadata={"help": "Activate nested quantization for 4bit base models"},
+    )
+    bnb_4bit_compute_dtype: Optional[str] = field(
+        default="float16",
+        metadata={"help": "Compute dtype for 4bit base models"},
+    )
+    bnb_4bit_quant_type: Optional[str] = field(
+        default="nf4",
+        metadata={"help": "Quantization type fp4 or nf4"},
+    )
+    use_flash_attn: Optional[bool] = field(
+        default=False,
+        metadata={"help": "Enables Flash attention for training."},
+    )
+    use_peft_lora: Optional[bool] = field(
+        default=False,
+        metadata={"help": "Enables PEFT LoRA for training."},
+    )
+    use_8bit_qunatization: Optional[bool] = field(
+        default=False,
+        metadata={"help": "Enables loading model in 8bit."},
+    )
+    use_4bit_qunatization: Optional[bool] = field(
+        default=False,
+        metadata={"help": "Enables loading model in 4bit."},
+    )
+    use_reentrant: Optional[bool] = field(
+        default=False,
+        metadata={"help": "Gradient Checkpointing param. Refer the related docs"},
+    )
 
-    parser.add_argument("--learning_rate", type=float, default=5e-5)
-    parser.add_argument("--lr_scheduler_type", type=str, default="cosine")
-    parser.add_argument("--num_warmup_steps", type=int, default=100)
-    parser.add_argument("--weight_decay", type=float, default=0.05)
 
-    parser.add_argument("--local_rank", type=int, default=0)
-    parser.add_argument("--no_fp16", action="store_false")
-    parser.add_argument("--bf16", action="store_true")
-    parser.add_argument("--no_gradient_checkpointing", action="store_false")
-    parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--num_workers", type=int, default=None)
-    parser.add_argument("--output_dir", type=str, default="./checkpoints")
-    parser.add_argument("--log_freq", default=1, type=int)
-    parser.add_argument("--eval_freq", default=1000, type=int)
-    parser.add_argument("--save_freq", default=1000, type=int)
-
-    parser.add_argument("--fim_rate", type=float, default=0)
-    parser.add_argument("--fim_spm_rate", type=float, default=0)
-
-    parser.add_argument("--use_peft_lora", action="store_true")
-    parser.add_argument("--lora_r", type=int, default=0)
-    parser.add_argument("--lora_alpha", type=int, default=0)
-    parser.add_argument("--lora_dropout", type=float, default=0)
-    parser.add_argument("--lora_target_modules", type=str, default=None)
-
-    parser.add_argument("--use_flash_attn", action="store_true")
-
-    parser.add_argument("--use_4bit_qunatization", action="store_true")
-    parser.add_argument("--use_nested_quant", action="store_true")
-    parser.add_argument("--bnb_4bit_quant_type", type=str, default="nf4")
-    parser.add_argument("--bnb_4bit_compute_dtype", type=str, default="float16")
-
-    parser.add_argument("--use_8bit_qunatization", action="store_true")
-
-    parser.add_argument("--push_to_hub", action="store_true")
-
-    return parser.parse_args()
+@dataclass
+class DataTrainingArguments:
+    dataset_name: Optional[str] = field(
+        default="smangrul/hug_stack",
+        metadata={"help": "The preference dataset to use."},
+    )
+    dataset_text_field: str = field(
+        default="text", metadata={"help": "Dataset field to use as input text."}
+    )
+    max_seq_length: Optional[int] = field(default=4096)
+    test_size: Optional[float] = field(default=0.1)
+    fim_rate: Optional[float] = field(default=0.5)
+    fim_spm_rate: Optional[float] = field(default=0.5)
+    splits: Optional[str] = field(
+        default="train",
+        metadata={"help": "Comma separate list of the splits to use from the dataset."},
+    )
 
 
 def chars_token_ratio(dataset, tokenizer, data_column, nb_examples=400):
@@ -319,105 +339,58 @@ def create_and_prepare_model(args):
     return model
 
 
-def run_training(args, train_data, val_data):
-    train_data.start_iteration = 0
+def main(model_args, data_args, training_args):
+    # Set seed for reproducibility
+    set_seed(training_args.seed)
 
-    is_deepspeed_peft_enabled = (
-        os.environ.get("ACCELERATE_USE_DEEPSPEED", "False").lower() == "true"
-        and args.use_peft_lora
+    # load the tokenizer
+    tokenizer = AutoTokenizer.from_pretrained(model_args.tokenizer_model_name_or_path)
+
+    # load the datasets
+    train_dataset, eval_dataset = create_datasets(
+        tokenizer, data_args, training_args.seed
     )
+    train_dataset.start_iteration = 0
 
-    save_strategy = "no" if is_deepspeed_peft_enabled else "steps"
+    model = create_and_prepare_model(model_args)
+    # gradient ckpt
+    model.config.use_cache = training_args.gradient_checkpointing
+    if training_args.gradient_checkpointing:
+        training_args.gradient_checkpointing_kwargs = {
+            "use_reentrant": model_args.use_reentrant
+        }
 
-    print(f"Starting main loop")
-    training_args = TrainingArguments(
-        output_dir=args.output_dir,
-        dataloader_drop_last=True,
-        evaluation_strategy="steps",
-        save_strategy=save_strategy,
-        max_steps=args.max_steps,
-        eval_steps=args.eval_freq,
-        save_steps=args.save_freq,
-        logging_steps=args.log_freq,
-        per_device_train_batch_size=args.batch_size,
-        per_device_eval_batch_size=args.batch_size,
-        learning_rate=args.learning_rate,
-        lr_scheduler_type=args.lr_scheduler_type,
-        warmup_steps=args.num_warmup_steps,
-        gradient_accumulation_steps=args.gradient_accumulation_steps,
-        gradient_checkpointing=args.no_gradient_checkpointing,
-        fp16=args.no_fp16,
-        bf16=args.bf16,
-        weight_decay=args.weight_decay,
-        run_name=f"starcoder-copilot",
-        push_to_hub=args.push_to_hub,
-        include_tokens_per_second=True,
-    )
-
-    print("Loading the model")
-    model = create_and_prepare_model(args)
-    print(model)
-    if args.use_peft_lora:
-        model.print_trainable_parameters()
-
+    # trainer
     trainer = Trainer(
-        model=model, args=training_args, train_dataset=train_data, eval_dataset=val_data
+        model=model,
+        args=training_args,
+        train_dataset=train_dataset,
+        eval_dataset=eval_dataset,
     )
+    trainer.accelerator.print(f"{trainer.model}")
 
-    # post process for faster training when using PEFT + INT4 Quantization
-    if args.use_peft_lora:
-        for name, module in trainer.model.named_modules():
-            if isinstance(module, LoraLayer):
-                if args.bf16:
-                    module = module.to(torch.bfloat16)
-            if "norm" in name:
-                module = module.to(torch.float32)
-            if any(x in name for x in ["lm_head", "embed_tokens", "wte", "wpe"]):
-                if hasattr(module, "weight"):
-                    if args.bf16 and module.weight.dtype == torch.float32:
-                        module = module.to(torch.bfloat16)
+    # train
+    checkpoint = None
+    if training_args.resume_from_checkpoint is not None:
+        checkpoint = training_args.resume_from_checkpoint
+    trainer.train(resume_from_checkpoint=checkpoint)
 
-    print("Training...")
-    trainer.train()
-    if args.use_peft_lora:
-        print("Saving last checkpoint of the model")
-        model.save_pretrained(os.path.join(args.output_dir, "final_checkpoint/"))
-
-    if is_deepspeed_peft_enabled:
-        trainer.accelerator.wait_for_everyone()
-        unwrapped_model = trainer.accelerator.unwrap_model(trainer.deepspeed)
-        unwrapped_model.save_pretrained(
-            args.output_dir,
-            state_dict=trainer.accelerator.get_state_dict(trainer.deepspeed),
-        )
-        trainer.accelerator.wait_for_everyone()
-
-    # Save model and tokenizer
+    # saving final model
     if trainer.is_fsdp_enabled:
         trainer.accelerator.state.fsdp_plugin.set_state_dict_type("FULL_STATE_DICT")
-
-    if args.push_to_hub:
-        trainer.push_to_hub()
-    else:
-        trainer.save_model(args.output_dir)
-    trainer.accelerator.print(f"Model saved to {args.output_dir}")
-
-    if args.push_to_hub:
-        trainer.model.push_to_hub(args.output_dir)
-
-
-def main(args):
-    tokenizer = AutoTokenizer.from_pretrained(
-        args.model_path, use_auth_token=True, trust_remote_code=True
-    )
-
-    train_dataset, eval_dataset = create_datasets(tokenizer, args)
-
-    run_training(args, train_dataset, eval_dataset)
+    trainer.save_model()
 
 
 if __name__ == "__main__":
-    args = get_args()
-    set_seed(args.seed)
-    os.makedirs(args.output_dir, exist_ok=True)
-    main(args)
+    parser = HfArgumentParser(
+        (ModelArguments, DataTrainingArguments, TrainingArguments)
+    )
+    if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
+        # If we pass only one argument to the script and it's the path to a json file,
+        # let's parse it to get our arguments.
+        model_args, data_args, training_args = parser.parse_json_file(
+            json_file=os.path.abspath(sys.argv[1])
+        )
+    else:
+        model_args, data_args, training_args = parser.parse_args_into_dataclasses()
+    main(model_args, data_args, training_args)

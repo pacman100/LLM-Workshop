@@ -190,7 +190,10 @@ def main(model_args, data_args, training_args):
             trainer.args.remove_unused_columns = False
 
     # train
-    trainer.train()
+    checkpoint = None
+    if training_args.resume_from_checkpoint is not None:
+        checkpoint = training_args.resume_from_checkpoint
+    trainer.train(resume_from_checkpoint=checkpoint)
 
     # saving final model
     if trainer.is_fsdp_enabled:
