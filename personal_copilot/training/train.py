@@ -140,6 +140,7 @@ class ConstantLengthDataset(IterableDataset):
         self.seed = seed
 
         (
+            self.bos_token_id,
             self.suffix_tok_id,
             self.prefix_tok_id,
             self.middle_tok_id,
@@ -167,7 +168,9 @@ class ConstantLengthDataset(IterableDataset):
                     else:
                         more_examples = False
                         break
-            tokenized_inputs = self.tokenizer(buffer, truncation=False)["input_ids"]
+            tokenized_inputs = self.tokenizer(
+                buffer, truncation=False, add_special_tokens=False
+            )["input_ids"]
             all_token_ids = []
 
             for tokenized_input in tokenized_inputs:
@@ -183,6 +186,7 @@ class ConstantLengthDataset(IterableDataset):
                         fim_rate=self.fim_rate,
                         fim_spm_rate=self.fim_spm_rate,
                         truncate_or_pad=False,
+                        bos_token_id=self.bos_token_id,
                     )
 
                 all_token_ids.extend(tokenized_input + [self.concat_token_id])
