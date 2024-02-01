@@ -60,6 +60,7 @@ class ChatmlSpecialTokens(str, Enum):
 
 
 def create_datasets(tokenizer, data_args, training_args, apply_chat_template=False):
+    # Adapted from https://github.com/huggingface/alignment-handbook/blob/cbcb3f60fbc8b8884e15e181ff49e9549ec5df00/src/alignment/data.py
     def preprocess(samples):
         prompt_batch, chosen_batch, rejected_batch = [], [], []
         for chosen, rejected in zip(samples["chosen"], samples["rejected"]):
