@@ -1,4 +1,0 @@
-PyGithub
-datasets
-nbformat
-pandas

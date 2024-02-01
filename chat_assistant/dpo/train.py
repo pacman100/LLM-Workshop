@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2023 The HuggingFace Inc. team. All rights reserved.
+# Copyright 2024 Sourab Mangrulkar. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,14 +12,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 from dataclasses import dataclass, field
 import os
 import sys
-from typing import Optional
+from typing import Literal, Optional
 from transformers import set_seed
 
 from transformers import HfArgumentParser, TrainingArguments
-from trl import SFTTrainer
+from trl import DPOTrainer
+from peft import PeftModel
 from utils import create_and_prepare_model, create_datasets
 
 ########################################################################
@@ -50,6 +52,7 @@ class ModelArguments:
             "help": "chatml|zephyr|none. Pass `none` if the dataset is already formatted with the chat template."
         },
     )
+    beta: Optional[float] = field(default=0.1)
     lora_alpha: Optional[int] = field(default=16)
     lora_dropout: Optional[float] = field(default=0.1)
     lora_r: Optional[int] = field(default=64)
@@ -91,6 +94,10 @@ class ModelArguments:
         default=False,
         metadata={"help": "Gradient Checkpointing param. Refer the related docs"},
     )
+    loss_type: Literal["sigmoid", "hinge", "ipo", "kto_pair"] = field(
+        default="sigmoid",
+        metadata={"help": "The type of DPO loss to use."},
+    )
 
 
 @dataclass
@@ -107,6 +114,7 @@ class DataTrainingArguments:
         default="text", metadata={"help": "Dataset field to use as input text."}
     )
     max_seq_length: Optional[int] = field(default=512)
+    max_prompt_length: Optional[int] = field(default=512)
     append_concat_token: Optional[bool] = field(
         default=False,
         metadata={
@@ -130,10 +138,10 @@ def main(model_args, data_args, training_args):
     set_seed(training_args.seed)
 
     # model
-    model, peft_config, tokenizer = create_and_prepare_model(model_args)
+    model, peft_config, tokenizer, model_kwargs = create_and_prepare_model(model_args)
 
     # gradient ckpt
-    model.config.use_cache = training_args.gradient_checkpointing
+    model.config.use_cache = not training_args.gradient_checkpointing
     if training_args.gradient_checkpointing:
         training_args.gradient_checkpointing_kwargs = {
             "use_reentrant": model_args.use_reentrant
@@ -147,21 +155,43 @@ def main(model_args, data_args, training_args):
         apply_chat_template=model_args.chat_template_format != "none",
     )
 
+    ref_model, ref_model_kwargs, model_adapter_name, ref_adapter_name = (
+        None,
+        None,
+        None,
+        None,
+    )
+
+    if not model_args.use_peft_lora:
+        ref_model = model
+        ref_model_kwargs = model_kwargs
+    else:
+        model_kwargs = None
+        if (
+            isinstance(model, PeftModel)
+            and "default" in model.peft_config
+            and "reference" in model.peft_config
+        ):
+            model_adapter_name, ref_adapter_name = "default", "reference"
+            peft_config = None
+
     # trainer
-    trainer = SFTTrainer(
-        model=model,
+    trainer = DPOTrainer(
+        model,
+        ref_model,
+        model_init_kwargs=model_kwargs,
+        ref_model_init_kwargs=ref_model_kwargs,
+        beta=model_args.beta,
         tokenizer=tokenizer,
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         peft_config=peft_config,
-        packing=data_args.packing,
-        dataset_kwargs={
-            "append_concat_token": data_args.append_concat_token,
-            "add_special_tokens": data_args.add_special_tokens,
-        },
-        dataset_text_field=data_args.dataset_text_field,
-        max_seq_length=data_args.max_seq_length,
+        max_length=data_args.max_seq_length,
+        max_prompt_length=data_args.max_prompt_length,
+        loss_type=model_args.loss_type,
+        model_adapter_name=model_adapter_name,
+        ref_adapter_name=ref_adapter_name,
     )
     trainer.accelerator.print(f"{trainer.model}")
     if model_args.use_peft_lora:
@@ -190,10 +220,7 @@ def main(model_args, data_args, training_args):
             trainer.args.remove_unused_columns = False
 
     # train
-    checkpoint = None
-    if training_args.resume_from_checkpoint is not None:
-        checkpoint = training_args.resume_from_checkpoint
-    trainer.train(resume_from_checkpoint=checkpoint)
+    trainer.train()
 
     # saving final model
     if trainer.is_fsdp_enabled:
