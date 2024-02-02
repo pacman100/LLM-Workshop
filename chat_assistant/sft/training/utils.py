@@ -24,6 +24,7 @@ from transformers import (
     AutoTokenizer,
     BitsAndBytesConfig,
 )
+from unsloth import FastLanguageModel
 
 DEFAULT_CHATML_CHAT_TEMPLATE = "{% for message in messages %}\n{{'<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>' + '\n'}}{% if loop.last and add_generation_prompt %}{{'<|im_start|>assistant\n' }}{% endif %}{% endfor %}"
 DEFAULT_ZEPHYR_CHAT_TEMPLATE = "{% for message in messages %}\n{% if message['role'] == 'user' %}\n{{ '<|user|>\n' + message['content'] + eos_token }}\n{% elif message['role'] == 'system' %}\n{{ '<|system|>\n' + message['content'] + eos_token }}\n{% elif message['role'] == 'assistant' %}\n{{ '<|assistant|>\n'  + message['content'] + eos_token }}\n{% endif %}\n{% if loop.last and add_generation_prompt %}\n{{ '<|assistant|>' }}\n{% endif %}\n{% endfor %}"
@@ -101,18 +102,27 @@ def create_and_prepare_model(args):
     device_map = None
     bnb_config = None
     load_in_8bit = args.use_8bit_qunatization
+    load_in_4bit = args.use_4bit_quantization
 
-    if args.use_4bit_qunatization:
+    if (
+        torch.distributed.is_available()
+        and torch.distributed.is_initialized()
+        and torch.distributed.get_world_size() > 1
+        and args.use_unsloth
+    ):
+        raise NotImplementedError("Unsloth is not supported in distributed training")
+
+    if args.use_4bit_quantization:
         compute_dtype = getattr(torch, args.bnb_4bit_compute_dtype)
 
         bnb_config = BitsAndBytesConfig(
-            load_in_4bit=args.use_4bit_qunatization,
+            load_in_4bit=args.use_4bit_quantization,
             bnb_4bit_quant_type=args.bnb_4bit_quant_type,
             bnb_4bit_compute_dtype=compute_dtype,
             bnb_4bit_use_double_quant=args.use_nested_quant,
         )
 
-        if compute_dtype == torch.float16 and args.use_4bit_qunatization:
+        if compute_dtype == torch.float16 and args.use_4bit_quantization:
             major, _ = torch.cuda.get_device_capability()
             if major >= 8:
                 print("=" * 80)
@@ -121,7 +131,7 @@ def create_and_prepare_model(args):
                 )
                 print("=" * 80)
 
-    if args.use_4bit_qunatization or args.use_8bit_qunatization:
+    if args.use_4bit_quantization or args.use_8bit_qunatization:
         device_map = (
             int(os.environ.get("LOCAL_RANK", -1))
             if torch.distributed.is_available() and torch.distributed.is_initialized()
