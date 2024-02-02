@@ -53,11 +53,11 @@ class BasicCodeFilter(BaseFilter):
             mean line length threshold or the fraction of alphanumeric charaters is less than the given threshold
         """
         text = doc.text
-        # filepath = doc.metadata["file_path"]
+        filepath = doc.metadata["file_path"]
         keep_sample = True
         if text == "remove":
             keep_sample = False
-        else:
+        elif "ipynb" not in filepath:
             max_line_length, mean_line_length, alphanum_ratio = get_basic_stats(text)
             if (
                 max_line_length > self.max_line_length_threshold

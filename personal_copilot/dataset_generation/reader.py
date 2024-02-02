@@ -135,6 +135,9 @@ def parse_data(cells, types):
 
 
 def build_content(markdown, code, output):
+    # Define a regex pattern to match Markdown and HTML base64 image syntax
+    image_pattern = re.compile(r"!\[.*?\]\(.*?\)|<img.*?>|data:image\/.*?;base64,.*?")
+    markdown = re.sub(image_pattern, "", markdown)
     if len(output) > 1000:
         output_str = output[:1000] + "[...]"
     elif output == "_____no_output_____":
