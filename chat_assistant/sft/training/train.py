@@ -169,25 +169,9 @@ def main(model_args, data_args, training_args):
         trainer.model.print_trainable_parameters()
         if getattr(trainer.accelerator.state, "fsdp_plugin", None):
             from peft.utils.other import fsdp_auto_wrap_policy
-            from torch.distributed.fsdp import (
-                FullyShardedDataParallel as FSDP,
-            )
 
             fsdp_plugin = trainer.accelerator.state.fsdp_plugin
-            auto_wrap_policy = fsdp_auto_wrap_policy(trainer.model)
-            kwargs = {
-                "sharding_strategy": fsdp_plugin.sharding_strategy,
-                "cpu_offload": fsdp_plugin.cpu_offload,
-                "auto_wrap_policy": auto_wrap_policy,
-                "mixed_precision": fsdp_plugin.mixed_precision_policy,
-                "sync_module_states": fsdp_plugin.sync_module_states,
-                "use_orig_params": False,  # this should be `False`
-                "limit_all_gathers": True,
-                "param_init_fn": fsdp_plugin.param_init_fn,
-                "device_id": trainer.accelerator.device,
-            }
-            trainer.model = trainer.model_wrapped = FSDP(trainer.model, **kwargs)
-            trainer.args.remove_unused_columns = False
+            fsdp_plugin.auto_wrap_policy = fsdp_auto_wrap_policy(trainer.model)
 
     # train
     checkpoint = None

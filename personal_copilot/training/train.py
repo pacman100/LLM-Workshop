@@ -384,6 +384,15 @@ def main(model_args, data_args, training_args):
     )
     trainer.accelerator.print(f"{trainer.model}")
 
+    if model_args.use_peft_lora:
+        # handle PEFT+FSDP case
+        trainer.model.print_trainable_parameters()
+        if getattr(trainer.accelerator.state, "fsdp_plugin", None):
+            from peft.utils.other import fsdp_auto_wrap_policy
+
+            fsdp_plugin = trainer.accelerator.state.fsdp_plugin
+            fsdp_plugin.auto_wrap_policy = fsdp_auto_wrap_policy(trainer.model)
+
     # train
     checkpoint = None
     if training_args.resume_from_checkpoint is not None:
