@@ -89,6 +89,12 @@ class ModelArguments:
         default="sigmoid",
         metadata={"help": "The type of DPO loss to use."},
     )
+    merge_and_unload: Optional[bool] = field(
+        default=False,
+        metadata={
+            "help": "Whether to merge the SFT adapter if the model is a PEFT model."
+        },
+    )
 
 
 @dataclass

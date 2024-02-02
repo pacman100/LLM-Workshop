@@ -192,8 +192,11 @@ def create_and_prepare_model(args):
         model = PeftModel.from_pretrained(
             model, args.model_name_or_path, is_trainable=True, adapter_name="default"
         )
-        # Load the adapter a second time, with a different name, which will be our reference model.
-        model.load_adapter(args.model_name_or_path, adapter_name="reference")
+        if args.merge_and_unload:
+            model = model.merge_and_unload()
+        else:
+            # Load the adapter a second time, with a different name, which will be our reference model.
+            model.load_adapter(args.model_name_or_path, adapter_name="reference")
     else:
         model = args.model_name_or_path
         if args.use_peft_lora:
