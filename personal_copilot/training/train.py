@@ -238,54 +238,40 @@ class ConstantLengthDataset(IterableDataset):
                 }
 
 
-def create_datasets(tokenizer, args):
-    dataset = load_dataset(
-        args.dataset_name,
-        data_dir=args.subset,
-        split=args.split,
-        use_auth_token=True,
-        num_proc=args.num_workers if not args.streaming else None,
-        streaming=args.streaming,
+def create_datasets(tokenizer, args, seed):
+    dataset = load_dataset(args.dataset_name, split=args.splits)
+    dataset = dataset.train_test_split(
+        test_size=args.test_size, seed=seed, shuffle=True
     )
-    if args.streaming:
-        print("Loading the dataset in streaming mode")
-        valid_data = dataset.take(args.size_valid_set)
-        train_data = dataset.skip(args.size_valid_set)
-        train_data = train_data.shuffle(buffer_size=args.shuffle_buffer, seed=args.seed)
-    else:
-        dataset = dataset.train_test_split(
-            test_size=args.test_size, seed=args.seed, shuffle=True
-        )
-        train_data = dataset["train"]
-        valid_data = dataset["test"]
-        print(
-            f"Size of the train set: {len(train_data)}. Size of the validation set: {len(valid_data)}"
-        )
-    chars_per_token = chars_token_ratio(train_data, tokenizer, args.data_column)
+    train_data = dataset["train"]
+    valid_data = dataset["test"]
+    print(
+        f"Size of the train set: {len(train_data)}. Size of the validation set: {len(valid_data)}"
+    )
+    chars_per_token = chars_token_ratio(train_data, tokenizer, args.dataset_text_field)
     print(f"The character to token ratio of the dataset is: {chars_per_token:.2f}")
     train_dataset = ConstantLengthDataset(
         tokenizer,
         train_data,
         infinite=True,
-        seq_length=args.seq_length,
+        seq_length=args.max_seq_length,
         chars_per_token=chars_per_token,
-        content_field=args.data_column,
+        content_field=args.dataset_text_field,
         fim_rate=args.fim_rate,
         fim_spm_rate=args.fim_spm_rate,
-        seed=args.seed,
+        seed=seed,
     )
     valid_dataset = ConstantLengthDataset(
         tokenizer,
         valid_data,
         infinite=False,
-        seq_length=args.seq_length,
+        seq_length=args.max_seq_length,
         chars_per_token=chars_per_token,
-        content_field=args.data_column,
+        content_field=args.dataset_text_field,
         fim_rate=args.fim_rate,
         fim_spm_rate=args.fim_spm_rate,
-        seed=args.seed,
+        seed=seed,
     )
-
     return train_dataset, valid_dataset
 
 
