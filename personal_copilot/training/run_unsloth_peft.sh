@@ -1,4 +1,5 @@
 CUDA_VISIBLE_DEVICES=0 WANDB_PROJECT=personal-code-copilot python train.py \
+--seed 100 \
 --model_name_or_path "codellama/CodeLlama-7b-Instruct-hf" \
 --dataset_name "smangrul/hug_stack" \
 --splits "train" \
@@ -15,7 +16,7 @@ CUDA_VISIBLE_DEVICES=0 WANDB_PROJECT=personal-code-copilot python train.py \
 --hub_private_repo True \
 --hub_strategy "every_save" \
 --bf16 True \
---learning_rate 3e-4 \
+--learning_rate 1e-4 \
 --lr_scheduler_type "cosine" \
 --weight_decay 0.1 \
 --warmup_ratio 0.1 \
