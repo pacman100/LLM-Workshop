@@ -22,15 +22,6 @@ from transformers import HfArgumentParser, TrainingArguments
 from trl import SFTTrainer
 from utils import create_and_prepare_model, create_datasets
 
-########################################################################
-# This is a fully working simple example to use trl's RewardTrainer.
-#
-# This example fine-tunes any causal language model (GPT-2, GPT-Neo, etc.)
-# by using the RewardTrainer from trl, we will leverage PEFT library to finetune
-# adapters on the model.
-#
-########################################################################
-
 
 # Define and parse arguments.
 @dataclass

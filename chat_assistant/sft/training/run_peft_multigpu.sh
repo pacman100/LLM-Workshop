@@ -28,13 +28,13 @@ torchrun --nproc_per_node 8 --nnodes 1 train.py \
 --per_device_eval_batch_size 8 \
 --gradient_accumulation_steps 8 \
 --gradient_checkpointing True \
---use_reentrant False \
+--use_reentrant True \
 --dataset_text_field "content" \
 --use_peft_lora True \
 --lora_r 8 \
 --lora_alpha 16 \
 --lora_dropout 0.1 \
---lora_target_modules "q_proj,k_proj,v_proj,o_proj,down_proj,up_proj,gate_proj,embed_tokens,lm_head" \
+--lora_target_modules "all-linear" \
 --use_4bit_quantization True \
 --use_nested_quant True \
 --bnb_4bit_compute_dtype "bfloat16" \
