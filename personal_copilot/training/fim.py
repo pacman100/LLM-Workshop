@@ -21,13 +21,6 @@ import numpy as np
 @functools.lru_cache(maxsize=None)
 def get_fim_token_ids(tokenizer):
     if "codellama" in tokenizer.name_or_path:
-        print(
-            tokenizer.bos_token_id,
-            tokenizer.suffix_id,
-            tokenizer.prefix_id,
-            tokenizer.middle_id,
-            0,
-        )
         return (
             tokenizer.bos_token_id,
             tokenizer.suffix_id,
