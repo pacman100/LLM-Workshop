@@ -46,6 +46,11 @@ OTHERS = [
     "xz",
     "pcm",
     "opus",
+    "package-lock.json",
+    "yarn.lock",
+    "Cargo.lock",
+    "poetry.lock",
+    "lock",
 ]
 ANTI_FOMATS = tuple(IMAGE + VIDEO + DOC + AUDIO + ARCHIVE + OTHERS)
 
