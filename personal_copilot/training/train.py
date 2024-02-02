@@ -276,7 +276,7 @@ def create_datasets(tokenizer, args, seed):
         fim_spm_rate=args.fim_spm_rate,
         seed=seed,
     )
-    print(f"A sample of train dataset: {next(iter(valid_dataset))}")
+    print(f"A sample of valid dataset: {next(iter(valid_dataset))}")
     return train_dataset, valid_dataset
 
 
