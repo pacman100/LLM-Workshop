@@ -29,7 +29,7 @@ CUDA_VISIBLE_DEVICES=0 WANDB_PROJECT=rlhf python train.py \
 --max_grad_norm 1.0 \
 --output_dir "mistral-dpo" \
 --per_device_train_batch_size 2 \
---per_device_eval_batch_size 4 \
+--per_device_eval_batch_size 2 \
 --gradient_accumulation_steps 8 \
 --gradient_checkpointing True \
 --use_reentrant True \
