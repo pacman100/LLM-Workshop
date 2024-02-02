@@ -31,8 +31,8 @@ CUDA_VISIBLE_DEVICES=0 WANDB_PROJECT=personal-code-copilot python train.py \
 --fim_rate 0.5 \
 --fim_spm_rate 0.5 \
 --use_peft_lora True \
---lora_r 32 \
---lora_alpha 64 \
+--lora_r 16 \
+--lora_alpha 16 \
 --lora_dropout 0.1 \
 --lora_target_modules "q_proj,k_proj,v_proj,o_proj,down_proj,up_proj,gate_proj" \
 --use_4bit_quantization True \
