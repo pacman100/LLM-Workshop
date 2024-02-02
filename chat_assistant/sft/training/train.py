@@ -134,10 +134,13 @@ def main(model_args, data_args, training_args):
     set_seed(training_args.seed)
 
     # model
-    model, peft_config, tokenizer = create_and_prepare_model(model_args)
+    model, peft_config, tokenizer = create_and_prepare_model(
+        model_args, data_args, training_args
+    )
 
     # gradient ckpt
     model.config.use_cache = training_args.gradient_checkpointing
+    training_args.gradient_checkpointing = not model_args.use_unsloth
     if training_args.gradient_checkpointing:
         training_args.gradient_checkpointing_kwargs = {
             "use_reentrant": model_args.use_reentrant

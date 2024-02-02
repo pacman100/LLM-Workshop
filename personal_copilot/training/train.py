@@ -343,7 +343,9 @@ def create_and_prepare_model(args):
             r=args.lora_r,
             bias="none",
             task_type="CAUSAL_LM",
-            target_modules=args.lora_target_modules.split(","),
+            target_modules=args.lora_target_modules.split(",")
+            if args.lora_target_modules != "all-linear"
+            else args.lora_target_modules,
         )
 
         if args.no_gradient_checkpointing:
