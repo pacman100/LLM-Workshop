@@ -160,6 +160,7 @@ class ConstantLengthDataset(IterableDataset):
         fim_rate=0.5,
         fim_spm_rate=0.5,
         seed=0,
+        shuffle=False,
     ):
         self.tokenizer = tokenizer
         self.concat_token_id = tokenizer.eos_token_id
@@ -172,6 +173,7 @@ class ConstantLengthDataset(IterableDataset):
         self.fim_rate = fim_rate
         self.fim_spm_rate = fim_spm_rate
         self.seed = seed
+        self.shuffle = shuffle
 
         (
             self.bos_token_id,
@@ -230,7 +232,8 @@ class ConstantLengthDataset(IterableDataset):
                 input_ids = all_token_ids[i : i + self.seq_length]
                 if len(input_ids) == self.seq_length:
                     examples.append(input_ids)
-            random.shuffle(examples)
+            if self.shuffle:
+                random.shuffle(examples)
             for example in examples:
                 self.current_size += 1
                 yield {
@@ -261,6 +264,7 @@ def create_datasets(tokenizer, args, seed):
         fim_rate=args.fim_rate,
         fim_spm_rate=args.fim_spm_rate,
         seed=seed,
+        shuffle=True,
     )
     valid_dataset = ConstantLengthDataset(
         tokenizer,
