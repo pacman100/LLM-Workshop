@@ -1,32 +1,41 @@
 python train.py \
-    --model_path "bigcode/starcoder" \
-    --dataset_name "smangrul/hf-stack-v1" \
-    --subset "data" \
-    --data_column "content" \
-    --split "train" \
-    --seq_length 2048 \
-    --max_steps 2000 \
-    --batch_size 4 \
-    --gradient_accumulation_steps 4 \
-    --learning_rate 5e-4 \
-    --lr_scheduler_type "cosine" \
-    --weight_decay 0.01 \
-    --num_warmup_steps 30 \
-    --eval_freq 100 \
-    --save_freq 100 \
-    --log_freq 25 \
-    --num_workers 4 \
-    --bf16 \
-    --no_fp16 \
-    --output_dir "peft-lora-starcoder15B-v2-personal-copilot-A100-40GB-colab" \
-    --fim_rate 0.5 \
-    --fim_spm_rate 0.5 \
-    --use_flash_attn \
-    --use_peft_lora \
-    --lora_r 32 \
-    --lora_alpha 64 \
-    --lora_dropout 0.0 \
-    --lora_target_modules "c_proj,c_attn,q_attn,c_fc,c_proj" \
-    --use_4bit_quantization \
-    --use_nested_quant \
-    --bnb_4bit_compute_dtype "bfloat16"
+--model_path "codellama/CodeLlama-7b-Instruct-hf" \
+--dataset_name "smangrul/hug_stack" \
+--splits "train" \
+--max_seq_len 2048 \
+--max_steps 1000 \
+--save_steps 500 \
+--eval_steps 100 \
+--logging_steps 25 \
+--log_level "info" \
+--logging_strategy "steps" \
+--evaluation_strategy "steps" \
+--save_strategy "steps" \
+--push_to_hub \
+--hub_private_repo True \
+--hub_strategy "every_save" \
+--bf16 True \
+--learning_rate 1e-4 \
+--lr_scheduler_type "cosine" \
+--weight_decay 0.1 \
+--warmup_ratio 0.1 \
+--max_grad_norm 1.0 \
+--output_dir "codellama-hugcoder" \
+--per_device_train_batch_size 16 \
+--per_device_eval_batch_size 16 \
+--gradient_accumulation_steps 4 \
+--gradient_checkpointing True \
+--use_reentrant True \
+--dataset_text_field "text" \
+--test_size 0.1 \
+--fim_rate 0.5 \
+--fim_spm_rate 0.5 \
+--use_peft_lora True \
+--lora_r 32 \
+--lora_alpha 64 \
+--lora_dropout 0.1 \
+--lora_target_modules "all-linear" \
+--use_4bit_quantization True \
+--use_nested_quant True \
+--bnb_4bit_compute_dtype "bfloat16" \
+--use_flash_attn True
