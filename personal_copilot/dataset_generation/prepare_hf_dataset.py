@@ -20,7 +20,7 @@ import json
 from datasets import Dataset
 
 DATAFOLDER = "hf_stack"
-HF_DATASET_NAME = "hug_stack"
+HF_DATASET_NAME = "smangrul/hug_stack"
 
 
 def load_gzip_jsonl(file_path):
