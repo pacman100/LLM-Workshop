@@ -9,7 +9,7 @@ from github import Github
 
 ORG = "huggingface"
 MIRROR_DIRECTORY = "hf_public_repos"
-TOK_K = 10
+TOK_K = 15
 
 
 def get_repos(username, access_token=None, include_fork=False):
