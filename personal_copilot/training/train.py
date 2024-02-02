@@ -272,6 +272,7 @@ def create_datasets(tokenizer, args, seed):
         fim_spm_rate=args.fim_spm_rate,
         seed=seed,
     )
+    print(f"A sample of train dataset: {train_dataset[0]}")
     return train_dataset, valid_dataset
 
 

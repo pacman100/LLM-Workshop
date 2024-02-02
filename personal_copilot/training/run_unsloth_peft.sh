@@ -29,7 +29,7 @@ CUDA_VISIBLE_DEVICES=0 WANDB_PROJECT=personal-code-copilot python train.py \
 --dataset_text_field "text" \
 --test_size 0.1 \
 --fim_rate 0.5 \
---fim_spm_rate 0.5 \
+--fim_spm_rate 0.0 \
 --use_peft_lora True \
 --lora_r 16 \
 --lora_alpha 16 \
