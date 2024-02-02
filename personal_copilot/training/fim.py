@@ -96,6 +96,7 @@ def permute(
             prefix_special_tokens = _bos_token_processing(
                 [prefix_tok_id, suffix_tok_id], bos_token_id
             )
+            print(prefix_special_tokens)
             # SPM (variant 2 from FIM paper)
             new_sample = np.concatenate(
                 [
