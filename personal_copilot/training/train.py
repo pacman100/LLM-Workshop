@@ -180,6 +180,7 @@ class ConstantLengthDataset(IterableDataset):
             self.middle_tok_id,
             self.pad_tok_id,
         ) = fim.get_fim_token_ids(self.tokenizer)
+        print(f"{self.bos_token_id=}")
         if not self.suffix_tok_id and self.fim_rate > 0:
             print("FIM is not supported by tokenizer, disabling FIM")
             self.fim_rate = 0

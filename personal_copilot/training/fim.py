@@ -124,7 +124,4 @@ def permute(
     else:
         # don't do FIM preproc
         new_sample = sample
-
-    print(new_sample)
-
     return list(new_sample), np_rng
