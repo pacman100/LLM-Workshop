@@ -1,5 +1,5 @@
 CUDA_VISIBLE_DEVICES=0 WANDB_PROJECT=personal-code-copilot python train.py \
---seed 100 \
+--seed 11 \
 --model_name_or_path "codellama/CodeLlama-7b-Instruct-hf" \
 --dataset_name "smangrul/hug_stack" \
 --splits "train" \
@@ -24,7 +24,7 @@ CUDA_VISIBLE_DEVICES=0 WANDB_PROJECT=personal-code-copilot python train.py \
 --output_dir "codellama-hugcoder" \
 --per_device_train_batch_size 16 \
 --per_device_eval_batch_size 16 \
---gradient_accumulation_steps 4 \
+--gradient_accumulation_steps 1 \
 --gradient_checkpointing True \
 --use_reentrant True \
 --dataset_text_field "text" \
