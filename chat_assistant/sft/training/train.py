@@ -131,7 +131,9 @@ def main(model_args, data_args, training_args):
 
     # gradient ckpt
     model.config.use_cache = not training_args.gradient_checkpointing
-    training_args.gradient_checkpointing = not model_args.use_unsloth
+    training_args.gradient_checkpointing = (
+        training_args.gradient_checkpointing and not model_args.use_unsloth
+    )
     if training_args.gradient_checkpointing:
         training_args.gradient_checkpointing_kwargs = {
             "use_reentrant": model_args.use_reentrant
