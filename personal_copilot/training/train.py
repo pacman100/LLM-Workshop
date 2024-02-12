@@ -39,7 +39,6 @@ from transformers import (
 )
 
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
-from unsloth import FastLanguageModel
 import fim
 
 
@@ -286,6 +285,9 @@ def create_and_prepare_model(args, data_args, training_args):
 
     load_in_8bit = args.use_8bit_qunatization
     load_in_4bit = args.use_4bit_quantization
+
+    if args.use_unsloth:
+        from unsloth import FastLanguageModel
 
     if args.use_4bit_quantization:
         compute_dtype = getattr(torch, args.bnb_4bit_compute_dtype)

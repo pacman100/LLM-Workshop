@@ -24,7 +24,6 @@ from transformers import (
     AutoTokenizer,
     BitsAndBytesConfig,
 )
-from unsloth import FastLanguageModel
 
 DEFAULT_CHATML_CHAT_TEMPLATE = "{% for message in messages %}\n{{'<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>' + '\n'}}{% if loop.last and add_generation_prompt %}{{'<|im_start|>assistant\n' }}{% endif %}{% endfor %}"
 DEFAULT_ZEPHYR_CHAT_TEMPLATE = "{% for message in messages %}\n{% if message['role'] == 'user' %}\n{{ '<|user|>\n' + message['content'] + eos_token }}\n{% elif message['role'] == 'system' %}\n{{ '<|system|>\n' + message['content'] + eos_token }}\n{% elif message['role'] == 'assistant' %}\n{{ '<|assistant|>\n'  + message['content'] + eos_token }}\n{% endif %}\n{% if loop.last and add_generation_prompt %}\n{{ '<|assistant|>' }}\n{% endif %}\n{% endfor %}"
@@ -99,6 +98,8 @@ def create_datasets(tokenizer, data_args, training_args, apply_chat_template=Fal
 
 
 def create_and_prepare_model(args, data_args, training_args):
+    if args.use_unsloth:
+        from unsloth import FastLanguageModel
     device_map = None
     bnb_config = None
     load_in_8bit = args.use_8bit_qunatization
