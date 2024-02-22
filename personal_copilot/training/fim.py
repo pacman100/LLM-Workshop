@@ -31,9 +31,9 @@ def get_fim_token_ids(tokenizer):
     elif "deepseek-coder" in tokenizer.name_or_path:
         return (
             tokenizer.bos_token_id,
-            tokenizer.encode("<｜fim▁end｜>", add_special_tokens=False)[0],
-            tokenizer.encode("<｜fim▁begin｜>", add_special_tokens=False)[0],
             tokenizer.encode("<｜fim▁hole｜>", add_special_tokens=False)[0],
+            tokenizer.encode("<｜fim▁begin｜>", add_special_tokens=False)[0],
+            tokenizer.encode("<｜fim▁end｜>", add_special_tokens=False)[0],
             tokenizer.encode("<pad>", add_special_tokens=False)[0],
         )
     elif "stable-code" in tokenizer.name_or_path:
