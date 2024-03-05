@@ -1,4 +1,4 @@
-accelerate launch --config_file “configs/deepspeed_config.yaml”  train.py \
+accelerate launch --config_file “configs/deepspeed_config_z3_qlora.yaml”  train.py \
 --seed 100 \
 --model_name_or_path “meta-llama/Llama-2-70b-hf” \
 --dataset_name “smangrul/ultrachat-10k-chatml” \
