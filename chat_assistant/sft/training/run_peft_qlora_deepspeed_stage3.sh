@@ -5,7 +5,7 @@ accelerate launch --config_file "configs/deepspeed_config_z3_qlora.yaml"  train.
 --chat_template_format "chatml" \
 --add_special_tokens False \
 --append_concat_token False \
---splits "train_sft,test_sft" \
+--splits "train,test" \
 --max_seq_len 2048 \
 --num_train_epochs 1 \
 --logging_steps 5 \
@@ -24,11 +24,11 @@ accelerate launch --config_file "configs/deepspeed_config_z3_qlora.yaml"  train.
 --warmup_ratio 0.0 \
 --max_grad_norm 1.0 \
 --output_dir "mistral-sft-lora-ds" \
---per_device_train_batch_size 16 \
---per_device_eval_batch_size 16 \
---gradient_accumulation_steps 4 \
+--per_device_train_batch_size 1 \
+--per_device_eval_batch_size 1 \
+--gradient_accumulation_steps 1 \
 --gradient_checkpointing True \
---use_reentrant False \
+--use_reentrant True \
 --dataset_text_field "content" \
 --use_flash_attn True \
 --use_peft_lora True \
