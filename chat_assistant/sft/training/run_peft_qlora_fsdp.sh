@@ -1,4 +1,4 @@
-accelerate launch --config_file "configs/fsdp_config.yaml"  train.py \
+accelerate launch --config_file "configs/fsdp_config_qlora.yaml"  train.py \
 --seed 100 \
 --model_name_or_path "meta-llama/Llama-2-70b-hf" \
 --dataset_name "smangrul/ultrachat-10k-chatml" \
@@ -6,7 +6,7 @@ accelerate launch --config_file "configs/fsdp_config.yaml"  train.py \
 --add_special_tokens False \
 --append_concat_token False \
 --splits "train,test" \
---max_seq_len 512 \
+--max_seq_len 2048 \
 --num_train_epochs 1 \
 --logging_steps 5 \
 --log_level "info" \
@@ -23,9 +23,9 @@ accelerate launch --config_file "configs/fsdp_config.yaml"  train.py \
 --weight_decay 1e-4 \
 --warmup_ratio 0.0 \
 --max_grad_norm 1.0 \
---output_dir "mistral-sft-lora-fsdp" \
---per_device_train_batch_size 8 \
---per_device_eval_batch_size 8 \
+--output_dir "llama-sft-lora-fsdp" \
+--per_device_train_batch_size 2 \
+--per_device_eval_batch_size 2 \
 --gradient_accumulation_steps 2 \
 --gradient_checkpointing True \
 --use_reentrant True \
