@@ -102,6 +102,7 @@ def create_and_prepare_model(args, data_args, training_args):
         from unsloth import FastLanguageModel
     device_map = None
     bnb_config = None
+    quant_storage_stype = None
     load_in_8bit = args.use_8bit_qunatization
     load_in_4bit = args.use_4bit_quantization
 
@@ -115,12 +116,14 @@ def create_and_prepare_model(args, data_args, training_args):
 
     if args.use_4bit_quantization:
         compute_dtype = getattr(torch, args.bnb_4bit_compute_dtype)
+        quant_storage_stype = getattr(torch, args.bnb_4bit_quant_storage_dtype)
 
         bnb_config = BitsAndBytesConfig(
             load_in_4bit=args.use_4bit_quantization,
             bnb_4bit_quant_type=args.bnb_4bit_quant_type,
             bnb_4bit_compute_dtype=compute_dtype,
             bnb_4bit_use_double_quant=args.use_nested_quant,
+            bnb_4bit_quant_storage=quant_storage_stype,
         )
 
         if compute_dtype == torch.float16 and args.use_4bit_quantization:
@@ -155,6 +158,7 @@ def create_and_prepare_model(args, data_args, training_args):
             # device_map=device_map,
             trust_remote_code=True,
             attn_implementation="flash_attention_2" if args.use_flash_attn else "eager",
+            torch_dtype=quant_storage_stype or torch.float32,
         )
 
     peft_config = None

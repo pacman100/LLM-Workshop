@@ -1,4 +1,4 @@
-accelerate launch --config_file "configs/deepspeed_config_z3_qlora.yaml"  train.py \
+accelerate launch --config_file "configs/fsdp_config_qlora.yaml"  train.py \
 --seed 100 \
 --model_name_or_path "meta-llama/Llama-2-70b-hf" \
 --dataset_name "smangrul/ultrachat-10k-chatml" \
@@ -23,7 +23,7 @@ accelerate launch --config_file "configs/deepspeed_config_z3_qlora.yaml"  train.
 --weight_decay 1e-4 \
 --warmup_ratio 0.0 \
 --max_grad_norm 1.0 \
---output_dir "llama-sft-lora-ds" \
+--output_dir "llama-sft-lora-fsdp" \
 --per_device_train_batch_size 2 \
 --per_device_eval_batch_size 2 \
 --gradient_accumulation_steps 2 \
@@ -38,4 +38,5 @@ accelerate launch --config_file "configs/deepspeed_config_z3_qlora.yaml"  train.
 --lora_target_modules "all-linear" \
 --use_4bit_quantization True \
 --use_nested_quant True \
---bnb_4bit_compute_dtype "bfloat16"
+--bnb_4bit_compute_dtype "bfloat16" \
+--bnb_4bit_quant_storage_dtype "bfloat16"
