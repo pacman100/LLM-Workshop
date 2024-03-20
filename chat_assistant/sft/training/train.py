@@ -181,7 +181,7 @@ def main(model_args, data_args, training_args):
 
     # LoftQ initialization when using QLoRA
     if model_args.use_4bit_quantization and model_args.use_loftq:
-        loftq_init(model, tokenizer, train_dataset, data_args.max_seq_length ,model_args)
+        loftq_init(trainer.model, tokenizer, train_dataset, data_args.max_seq_length ,model_args)
 
     # train
     checkpoint = None
