@@ -95,6 +95,10 @@ class ModelArguments:
         default=False,
         metadata={"help": "Enables LoftQ init for the LoRA adapters when using QLoRA."},
     )
+    use_loftq_callback: Optional[bool] = field(
+        default=False,
+        metadata={"help": "Enables LoftQ callback comparing logits of base model to the ones from LoftQ init. Provides better init."},
+    )
 
 
 @dataclass

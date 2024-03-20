@@ -230,28 +230,32 @@ def error_report(x, y):
 
 
 def loftq_init(model, tokenizer, train_dataset, max_seq_length, args):
-    compute_dtype = getattr(torch, args.bnb_4bit_compute_dtype)
-    base_model = AutoModelForCausalLM.from_pretrained(args.model_name_or_path, torch_dtype=compute_dtype)
-    base_model.resize_token_embeddings(len(tokenizer), pad_to_multiple_of=8)
-    random_input_ids = torch.randint(0, len(train_dataset), size=(1,)).numpy().tolist()
-    random_inputs = [train_dataset[i]['content'] for i in random_input_ids]
-    random_inputs = tokenizer(random_inputs, return_tensors="pt", padding=True, truncation="max_length", max_length=max_seq_length)
-    logits_base = base_model(**random_inputs).logits
-    del base_model
-    gc.collect()
+    if args.use_loftq_callback:
+        compute_dtype = getattr(torch, args.bnb_4bit_compute_dtype)
+        base_model = AutoModelForCausalLM.from_pretrained(args.model_name_or_path, torch_dtype=compute_dtype)
+        base_model.resize_token_embeddings(len(tokenizer), pad_to_multiple_of=8)
+        random_input_ids = torch.randint(0, len(train_dataset), size=(1,)).numpy().tolist()
+        random_inputs = [train_dataset[i]['content'] for i in random_input_ids]
+        random_inputs = tokenizer(random_inputs, return_tensors="pt", padding=True, truncation="max_length", max_length=max_seq_length)
+        logits_base = base_model(**random_inputs).logits
+        del base_model
+        gc.collect()
+        
+        def loftq_callback(model, module_name):
+            """Callable to replace weights with LoFTQ if the mse is lower than the current best one."""
+            global current_mse
+            logits = model(**random_inputs).logits
+            mse = get_mse(logits_base, logits)
+            if mse < current_mse:
+                current_mse = mse
+                print(f"MSE improved for module {module_name}")
+                return True
+            print(f"MSE did not improve for module {module_name}")
+            return False
+        
+        replace_lora_weights_loftq(model, callback=loftq_callback)
+        logits_loftq_callback = model(**random_inputs).logits
+        error_report(logits_base, logits_loftq_callback)
+    else:
+        replace_lora_weights_loftq(model)
     
-    def loftq_callback(model, module_name):
-        """Callable to replace weights with LoFTQ if the mse is lower than the current best one."""
-        global current_mse
-        logits = model(**random_inputs).logits
-        mse = get_mse(logits_base, logits)
-        if mse < current_mse:
-            current_mse = mse
-            print(f"MSE improved for module {module_name}")
-            return True
-        print(f"MSE did not improve for module {module_name}")
-        return False
-    
-    replace_lora_weights_loftq(model, callback=loftq_callback)
-    logits_loftq_callback = model(**random_inputs).logits
-    error_report(logits_base, logits_loftq_callback)
