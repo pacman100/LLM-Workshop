@@ -160,11 +160,6 @@ def main(model_args, data_args, training_args):
         apply_chat_template=model_args.chat_template_format != "none",
     )
 
-    # LoftQ initialization when using QLoRA
-    if model_args.use_4bit_quantization and model_args.use_loftq:
-        loftq_init(model, tokenizer, train_dataset, data_args.max_seq_length ,model_args)
-
-
     # trainer
     trainer = SFTTrainer(
         model=model,
@@ -183,6 +178,10 @@ def main(model_args, data_args, training_args):
     )
     trainer.accelerator.print(f"{trainer.model}")
     trainer.model.print_trainable_parameters()
+
+    # LoftQ initialization when using QLoRA
+    if model_args.use_4bit_quantization and model_args.use_loftq:
+        loftq_init(model, tokenizer, train_dataset, data_args.max_seq_length ,model_args)
 
     # train
     checkpoint = None
