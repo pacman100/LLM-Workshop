@@ -14,6 +14,7 @@
 # limitations under the License.
 
 from enum import Enum
+import gc
 import os
 import torch
 from datasets import DatasetDict, load_dataset, load_from_disk
@@ -228,12 +229,16 @@ def error_report(x, y):
     )
 
 
-def loftq_init(model, tokenizer, train_dataset, args):
-    base_model = AutoModelForCausalLM.from_pretrained(args.model_name_or_path)
-    random_input_ids = torch.randint(0, len(train_dataset), size=(8,)).numpy().tolist()
-    random_inputs = [train_dataset[i] for i in random_input_ids]
-    random_inputs = tokenizer(random_inputs, return_tensors="pt", padding=True)
+def loftq_init(model, tokenizer, train_dataset, max_seq_length, args):
+    compute_dtype = getattr(torch, args.bnb_4bit_compute_dtype)
+    base_model = AutoModelForCausalLM.from_pretrained(args.model_name_or_path, torch_dtype=compute_dtype)
+    base_model.resize_token_embeddings(len(tokenizer), pad_to_multiple_of=8)
+    random_input_ids = torch.randint(0, len(train_dataset), size=(1,)).numpy().tolist()
+    random_inputs = [train_dataset[i]['content'] for i in random_input_ids]
+    random_inputs = tokenizer(random_inputs, return_tensors="pt", padding=True, truncation="max_length", max_length=max_seq_length)
     logits_base = base_model(**random_inputs).logits
+    del base_model
+    gc.collect()
     
     def loftq_callback(model, module_name):
         """Callable to replace weights with LoFTQ if the mse is lower than the current best one."""
