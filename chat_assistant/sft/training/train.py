@@ -16,11 +16,12 @@ from dataclasses import dataclass, field
 import os
 import sys
 from typing import Optional
+import torch
 from transformers import set_seed
 
 from transformers import HfArgumentParser, TrainingArguments
 from trl import SFTTrainer
-from utils import create_and_prepare_model, create_datasets
+from utils import create_and_prepare_model, create_datasets, loftq_init
 
 
 # Define and parse arguments.
@@ -59,7 +60,7 @@ class ModelArguments:
         metadata={"help": "Compute dtype for 4bit base models"},
     )
     bnb_4bit_quant_storage_dtype: Optional[str] = field(
-        default="float32",
+        default="uint8",
         metadata={"help": "Quantization storage dtype for 4bit base models"},
     )
     bnb_4bit_quant_type: Optional[str] = field(
@@ -89,6 +90,14 @@ class ModelArguments:
     use_unsloth: Optional[bool] = field(
         default=False,
         metadata={"help": "Enables UnSloth for training."},
+    )
+    use_loftq: Optional[bool] = field(
+        default=False,
+        metadata={"help": "Enables LoftQ init for the LoRA adapters when using QLoRA."},
+    )
+    use_loftq_callback: Optional[bool] = field(
+        default=False,
+        metadata={"help": "Enables LoftQ callback comparing logits of base model to the ones from LoftQ init. Provides better init."},
     )
 
 
@@ -169,6 +178,10 @@ def main(model_args, data_args, training_args):
     )
     trainer.accelerator.print(f"{trainer.model}")
     trainer.model.print_trainable_parameters()
+
+    # LoftQ initialization when using QLoRA
+    if model_args.use_4bit_quantization and model_args.use_loftq:
+        loftq_init(trainer.model, tokenizer, train_dataset, data_args.max_seq_length ,model_args)
 
     # train
     checkpoint = None

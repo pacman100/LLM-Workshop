@@ -1,11 +1,11 @@
 python train.py \
 --seed 100 \
 --model_name_or_path "mistralai/Mistral-7B-v0.1" \
---dataset_name "HuggingFaceH4/ultrachat_200k" \
+--dataset_name "smangrul/ultrachat-10k-chatml" \
 --chat_template_format "chatml" \
 --add_special_tokens False \
 --append_concat_token False \
---splits "train_sft,test_sft" \
+--splits "train,test" \
 --max_seq_len 2048 \
 --num_train_epochs 1 \
 --logging_steps 5 \
