@@ -18,12 +18,13 @@ import os
 import torch
 from datasets import DatasetDict, load_dataset, load_from_disk
 from datasets.builder import DatasetGenerationError
-from peft import LoraConfig
+from peft import LoraConfig, replace_lora_weights_loftq
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
     BitsAndBytesConfig,
 )
+current_mse = float("inf")
 
 DEFAULT_CHATML_CHAT_TEMPLATE = "{% for message in messages %}\n{{'<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>' + '\n'}}{% if loop.last and add_generation_prompt %}{{'<|im_start|>assistant\n' }}{% endif %}{% endfor %}"
 DEFAULT_ZEPHYR_CHAT_TEMPLATE = "{% for message in messages %}\n{% if message['role'] == 'user' %}\n{{ '<|user|>\n' + message['content'] + eos_token }}\n{% elif message['role'] == 'system' %}\n{{ '<|system|>\n' + message['content'] + eos_token }}\n{% elif message['role'] == 'assistant' %}\n{{ '<|assistant|>\n'  + message['content'] + eos_token }}\n{% endif %}\n{% if loop.last and add_generation_prompt %}\n{{ '<|assistant|>' }}\n{% endif %}\n{% endfor %}"
@@ -100,7 +101,6 @@ def create_datasets(tokenizer, data_args, training_args, apply_chat_template=Fal
 def create_and_prepare_model(args, data_args, training_args):
     if args.use_unsloth:
         from unsloth import FastLanguageModel
-    device_map = None
     bnb_config = None
     quant_storage_stype = None
     load_in_8bit = args.use_8bit_qunatization
@@ -135,13 +135,6 @@ def create_and_prepare_model(args, data_args, training_args):
                 )
                 print("=" * 80)
 
-    if args.use_4bit_quantization or args.use_8bit_qunatization:
-        device_map = (
-            int(os.environ.get("LOCAL_RANK", -1))
-            if torch.distributed.is_available() and torch.distributed.is_initialized()
-            else "auto"
-        )  # {"": 0}
-
     if args.use_unsloth:
         # Load model
         model, _ = FastLanguageModel.from_pretrained(
@@ -155,7 +148,6 @@ def create_and_prepare_model(args, data_args, training_args):
             args.model_name_or_path,
             load_in_8bit=load_in_8bit,
             quantization_config=bnb_config,
-            # device_map=device_map,
             trust_remote_code=True,
             attn_implementation="flash_attention_2" if args.use_flash_attn else "eager",
             torch_dtype=quant_storage_stype or torch.float32,
@@ -218,3 +210,43 @@ def create_and_prepare_model(args, data_args, training_args):
         )
 
     return model, peft_config, tokenizer
+
+def get_mae(x, y):
+    return (x - y).abs().mean()
+
+
+def get_mse(x, y):
+    return torch.pow(x - y, 2).mean()
+
+
+def error_report(x, y):
+    mae = get_mae(x, y)
+    mse = get_mse(x, y)
+    print(
+        f"Mean absolute error: {mae:>8.5f}\n"
+        f"Mean squared error:  {mse:>8.5f}"
+    )
+
+
+def loftq_init(model, tokenizer, train_dataset, args):
+    base_model = AutoModelForCausalLM.from_pretrained(args.model_name_or_path)
+    random_input_ids = torch.randint(0, len(train_dataset), size=(8,)).numpy().tolist()
+    random_inputs = [train_dataset[i] for i in random_input_ids]
+    random_inputs = tokenizer(random_inputs, return_tensors="pt", padding=True)
+    logits_base = base_model(**random_inputs).logits
+    
+    def loftq_callback(model, module_name):
+        """Callable to replace weights with LoFTQ if the mse is lower than the current best one."""
+        global current_mse
+        logits = model(**random_inputs).logits
+        mse = get_mse(logits_base, logits)
+        if mse < current_mse:
+            current_mse = mse
+            print(f"MSE improved for module {module_name}")
+            return True
+        print(f"MSE did not improve for module {module_name}")
+        return False
+    
+    replace_lora_weights_loftq(model, callback=loftq_callback)
+    logits_loftq_callback = model(**random_inputs).logits
+    error_report(logits_base, logits_loftq_callback)

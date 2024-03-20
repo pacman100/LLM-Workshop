@@ -16,11 +16,12 @@ from dataclasses import dataclass, field
 import os
 import sys
 from typing import Optional
+import torch
 from transformers import set_seed
 
 from transformers import HfArgumentParser, TrainingArguments
 from trl import SFTTrainer
-from utils import create_and_prepare_model, create_datasets
+from utils import create_and_prepare_model, create_datasets, loftq_init
 
 
 # Define and parse arguments.
@@ -90,6 +91,10 @@ class ModelArguments:
         default=False,
         metadata={"help": "Enables UnSloth for training."},
     )
+    use_loftq: Optional[bool] = field(
+        default=False,
+        metadata={"help": "Enables LoftQ init for the LoRA adapters when using QLoRA."},
+    )
 
 
 @dataclass
@@ -150,6 +155,11 @@ def main(model_args, data_args, training_args):
         training_args,
         apply_chat_template=model_args.chat_template_format != "none",
     )
+
+    # LoftQ initialization when using QLoRA
+    if model_args.use_4bit_quantization and model_args.use_loftq:
+        loftq_init(model, tokenizer, train_dataset, model_args)
+
 
     # trainer
     trainer = SFTTrainer(
