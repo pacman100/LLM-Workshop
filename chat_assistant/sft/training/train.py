@@ -177,7 +177,8 @@ def main(model_args, data_args, training_args):
         max_seq_length=data_args.max_seq_length,
     )
     trainer.accelerator.print(f"{trainer.model}")
-    trainer.model.print_trainable_parameters()
+    if model_args.use_peft_lora:
+        trainer.model.print_trainable_parameters()
 
     # LoftQ initialization when using QLoRA
     if model_args.use_4bit_quantization and model_args.use_loftq:
