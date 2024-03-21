@@ -17,6 +17,7 @@
 Continued pre-training/fine-tuning of code LLMs for code autocompletion.
 """
 
+import gc
 import os
 import random
 import sys
@@ -38,7 +39,7 @@ from transformers import (
     BitsAndBytesConfig,
 )
 
-from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training, replace_lora_weights_loftq
 import fim
 
 
@@ -98,6 +99,14 @@ class ModelArguments:
     use_unsloth: Optional[bool] = field(
         default=False,
         metadata={"help": "Enables UnSloth for training."},
+    )
+    use_loftq: Optional[bool] = field(
+        default=False,
+        metadata={"help": "Enables LoftQ init for the LoRA adapters when using QLoRA."},
+    )
+    use_loftq_callback: Optional[bool] = field(
+        default=False,
+        metadata={"help": "Enables LoftQ callback comparing logits of base model to the ones from LoftQ init. Provides better init."},
     )
 
 
@@ -278,6 +287,53 @@ def create_datasets(tokenizer, args, seed):
     print(f"A sample of valid dataset: {next(iter(valid_dataset))}")
     return train_dataset, valid_dataset
 
+def get_mae(x, y):
+    return (x - y).abs().mean()
+
+
+def get_mse(x, y):
+    return torch.pow(x - y, 2).mean()
+
+
+def error_report(x, y):
+    mae = get_mae(x, y)
+    mse = get_mse(x, y)
+    print(
+        f"Mean absolute error: {mae:>8.5f}\n"
+        f"Mean squared error:  {mse:>8.5f}"
+    )
+
+    
+def loftq_init(model, tokenizer, train_dataset, max_seq_length, args):
+    if args.use_loftq_callback:
+        compute_dtype = getattr(torch, args.bnb_4bit_compute_dtype)
+        base_model = AutoModelForCausalLM.from_pretrained(args.model_name_or_path, torch_dtype=compute_dtype)
+        base_model.resize_token_embeddings(len(tokenizer), pad_to_multiple_of=8)
+        random_input_ids = torch.randint(0, len(train_dataset), size=(1,)).numpy().tolist()
+        random_inputs = [train_dataset[i]['content'] for i in random_input_ids]
+        random_inputs = tokenizer(random_inputs, return_tensors="pt", padding=True, truncation="max_length", max_length=max_seq_length)
+        logits_base = base_model(**random_inputs).logits
+        del base_model
+        gc.collect()
+        
+        def loftq_callback(model, module_name):
+            """Callable to replace weights with LoFTQ if the mse is lower than the current best one."""
+            global current_mse
+            logits = model(**random_inputs).logits
+            mse = get_mse(logits_base, logits)
+            if mse < current_mse:
+                current_mse = mse
+                print(f"MSE improved for module {module_name}")
+                return True
+            print(f"MSE did not improve for module {module_name}")
+            return False
+        
+        replace_lora_weights_loftq(model, callback=loftq_callback)
+        logits_loftq_callback = model(**random_inputs).logits
+        error_report(logits_base, logits_loftq_callback)
+    else:
+        replace_lora_weights_loftq(model)
+
 
 def create_and_prepare_model(args, data_args, training_args):
     device_map = None
@@ -408,14 +464,9 @@ def main(model_args, data_args, training_args):
     if model_args.use_peft_lora:
         trainer.model.print_trainable_parameters()
 
-    if model_args.use_peft_lora:
-        # handle PEFT+FSDP case
-        trainer.model.print_trainable_parameters()
-        if getattr(trainer.accelerator.state, "fsdp_plugin", None):
-            from peft.utils.other import fsdp_auto_wrap_policy
-
-            fsdp_plugin = trainer.accelerator.state.fsdp_plugin
-            fsdp_plugin.auto_wrap_policy = fsdp_auto_wrap_policy(trainer.model)
+    # LoftQ initialization when using QLoRA
+    if model_args.use_4bit_quantization and model_args.use_loftq:
+        loftq_init(trainer.model, tokenizer, train_dataset, data_args.max_seq_length ,model_args)
 
     # train
     checkpoint = None
