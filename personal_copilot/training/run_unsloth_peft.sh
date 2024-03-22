@@ -16,7 +16,7 @@ CUDA_VISIBLE_DEVICES=0 WANDB_PROJECT=personal-code-copilot python train.py \
 --hub_private_repo True \
 --hub_strategy "every_save" \
 --bf16 True \
---learning_rate 1e-4 \
+--learning_rate 2e-4 \
 --lr_scheduler_type "cosine" \
 --weight_decay 0.1 \
 --warmup_ratio 0.1 \
@@ -24,7 +24,7 @@ CUDA_VISIBLE_DEVICES=0 WANDB_PROJECT=personal-code-copilot python train.py \
 --output_dir "codellama-hugcoder" \
 --per_device_train_batch_size 16 \
 --per_device_eval_batch_size 16 \
---gradient_accumulation_steps 1 \
+--gradient_accumulation_steps 4 \
 --gradient_checkpointing True \
 --use_reentrant True \
 --dataset_text_field "text" \
