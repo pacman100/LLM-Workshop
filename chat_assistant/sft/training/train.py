@@ -185,10 +185,10 @@ def main(model_args, data_args, training_args):
         trainer.model.print_trainable_parameters()
 
     if trainer.is_deepspeed_enabled and model_args.moe_layer_name is not None:
-        from deepspeed.utils import set_z3_leaf_module
+        from deepspeed.utils import set_z3_leaf_modules
 
         moe_class = get_module_class_from_name(model_args.moe_layer_name)
-        set_z3_leaf_module(model, [moe_class])  # z3_leaf
+        set_z3_leaf_modules(model, [moe_class])  # z3_leaf
 
     # LoftQ initialization when using QLoRA
     if model_args.use_4bit_quantization and model_args.use_loftq:
