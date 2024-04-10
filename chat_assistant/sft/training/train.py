@@ -184,10 +184,11 @@ def main(model_args, data_args, training_args):
     if model_args.use_peft_lora:
         trainer.model.print_trainable_parameters()
 
+    # DeepSpeed requires the below to make sure MOE layers aren't broken down further
     if trainer.is_deepspeed_enabled and model_args.moe_layer_name is not None:
         from deepspeed.utils import set_z3_leaf_modules
 
-        moe_class = get_module_class_from_name(model_args.moe_layer_name)
+        moe_class = get_module_class_from_name(trainer.model, model_args.moe_layer_name)
         set_z3_leaf_modules(model, [moe_class])  # z3_leaf
 
     # LoftQ initialization when using QLoRA
