@@ -21,7 +21,12 @@ from transformers import set_seed
 
 from transformers import HfArgumentParser, TrainingArguments
 from trl import SFTTrainer
-from utils import create_and_prepare_model, create_datasets, loftq_init, get_module_class_from_name
+from utils import (
+    create_and_prepare_model,
+    create_datasets,
+    loftq_init,
+    get_module_class_from_name,
+)
 
 
 # Define and parse arguments.
@@ -97,7 +102,9 @@ class ModelArguments:
     )
     use_loftq_callback: Optional[bool] = field(
         default=False,
-        metadata={"help": "Enables LoftQ callback comparing logits of base model to the ones from LoftQ init. Provides better init."},
+        metadata={
+            "help": "Enables LoftQ callback comparing logits of base model to the ones from LoftQ init. Provides better init."
+        },
     )
     moe_layer_name: Optional[str] = field(
         default=None,
@@ -184,16 +191,15 @@ def main(model_args, data_args, training_args):
     if model_args.use_peft_lora:
         trainer.model.print_trainable_parameters()
 
-    # DeepSpeed requires the below to make sure MOE layers aren't broken down further
-    if trainer.is_deepspeed_enabled and model_args.moe_layer_name is not None:
-        from deepspeed.utils import set_z3_leaf_modules
-
-        moe_class = get_module_class_from_name(trainer.model, model_args.moe_layer_name)
-        set_z3_leaf_modules(model, [moe_class])  # z3_leaf
-
     # LoftQ initialization when using QLoRA
     if model_args.use_4bit_quantization and model_args.use_loftq:
-        loftq_init(trainer.model, tokenizer, train_dataset, data_args.max_seq_length ,model_args)
+        loftq_init(
+            trainer.model,
+            tokenizer,
+            train_dataset,
+            data_args.max_seq_length,
+            model_args,
+        )
 
     # train
     checkpoint = None
